@@ -1,0 +1,76 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id Int @id @default(autoincrement())
+  email       String @unique @map("email")
+  password    String @map("password")
+  firstName   String @map("first_name")
+  lastName    String @map("last_name")
+  phone       String @unique @map("phone")
+
+  hotelId     Int    @map("hotel_id")
+  hotel       Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+}
+
+model Hotel {
+  id              Int    @id @default(autoincrement()) @map("id")
+  name            String @map("name")
+  website         String? @map("website")
+  socialLinks     Json?  @map("social_links")
+  businessCard    String? @map("business_card")
+  letterHead      String? @map("letter_head")
+  branches        Branch[]
+  owners          PropertyOwner[]
+  staff           User[]
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@map("hotels")
+}
+
+model Branch {
+  id               Int    @id @default(autoincrement()) @map("id")
+  hotelId          Int    @map("hotel_id")
+  name             String @map("name")
+  location         String @map("location")
+  email            String @unique @map("email")
+  phone            String @map("phone")
+  whatsapp         String? @map("whatsapp")
+  hotel            Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@map("branches")
+}
+
+model PropertyOwner {
+  id          Int    @id @default(autoincrement()) @map("id")
+  hotelId     Int    @map("hotel_id")
+  name        String @map("name")
+  cnic        String @unique @map("cnic")
+  address     String @map("address")
+  phone       String @map("phone")
+  email       String @unique @map("email")
+  hotel       Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("property_owners")
+}
+
+model Role {
+  id         Int    @id @default(autoincrement()) @map("id")
+  name       String @unique @map("name")
+
+  @@map("roles")
+}
