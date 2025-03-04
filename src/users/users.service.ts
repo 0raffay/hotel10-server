@@ -12,7 +12,14 @@ export class UsersService {
     const { password } = createUserDto;
     const hashedPassword = await bcrypt.hash(password, 10);
     return await this.prisma.user.create({
-      data:  {...createUserDto, password: hashedPassword},
+      data: {
+        firstName: createUserDto.firstName,
+        lastName: createUserDto.lastName,
+        email: createUserDto.email,
+        password: hashedPassword,
+        phone: createUserDto.phone,
+        hotel: { connect: { id: createUserDto.hotelId } }
+      }
     });
   }
 
@@ -27,13 +34,18 @@ export class UsersService {
   }
 
   async update(id: number, updateUserDto: UpdateUserDto) {
-    const { password, ...userData } = updateUserDto;
-    const updatedData = password
-      ? { ...userData, password: await bcrypt.hash(password, 10) }
-      : userData;
+    const { password } = updateUserDto;
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
     return await this.prisma.user.update({
       where: { id },
-      data: updatedData,
+      data: {
+        email: updateUserDto.email,
+        firstName: updateUserDto.firstName,
+        lastName: updateUserDto.lastName,
+        phone: updateUserDto.phone,
+        password: hashedPassword,
+        hotel: updateUserDto.hotelId ? { connect: { id: updateUserDto.hotelId } } : undefined
+      }
     });
   }
 
