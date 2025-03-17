@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsArray, IsNotEmpty } from "class-validator";
+import { IsOptional, IsString, IsArray, IsNotEmpty } from 'class-validator';
 
 export class CreateHotelDto {
   @IsString()
