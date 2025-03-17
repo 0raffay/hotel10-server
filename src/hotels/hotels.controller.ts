@@ -8,15 +8,14 @@ import {
   Delete,
 } from '@nestjs/common';
 import { HotelsService } from './hotels.service';
-import { CreateHotelDto } from './dto/create-hotel.dto';
-import { UpdateHotelDto } from './dto/update-hotel.dto';
+import { Prisma } from '@prisma/client';
 
 @Controller('hotels')
 export class HotelsController {
   constructor(private readonly hotelsService: HotelsService) {}
 
   @Post()
-  create(@Body() createHotelDto: CreateHotelDto) {
+  create(@Body() createHotelDto: Prisma.HotelCreateInput) {
     return this.hotelsService.create(createHotelDto);
   }
 
@@ -31,7 +30,7 @@ export class HotelsController {
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateHotelDto: UpdateHotelDto) {
+  update(@Param('id') id: string, @Body() updateHotelDto: Prisma.HotelUpdateInput) {
     return this.hotelsService.update(+id, updateHotelDto);
   }
 
