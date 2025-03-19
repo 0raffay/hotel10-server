@@ -7,9 +7,13 @@ import { SuccessResponseInterceptor } from './common/interceptors/success-respon
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.enableCors();
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true
+  }));
   app.useGlobalFilters(new GlobalExceptionsFilter());
   app.useGlobalInterceptors(new SuccessResponseInterceptor());
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 8800);
 }
 bootstrap();

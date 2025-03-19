@@ -3,15 +3,18 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from './passport/local.strategy';
-import { UsersService } from '@/users/users.service';
-import { JwtModule, JwtService } from '@nestjs/jwt';
+import { JwtModule } from '@nestjs/jwt';
 import { UsersModule } from '@/users/users.module';
 import { JwtStrategy } from './passport/jwt.strategy';
+import { HotelsModule } from '@/hotels/hotels.module';
+import { OwnerModule } from '@/owner/owner.module';
 
 @Module({
   imports: [
     PassportModule,
     UsersModule,
+    HotelsModule,
+    OwnerModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '60s' }

@@ -20,7 +20,7 @@ export class GlobalExceptionsFilter implements ExceptionFilter {
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const message = exception instanceof HttpException ? exception.message : "Internal Server Error";
+    const message = exception instanceof HttpException ? (exception.getResponse()["message"] || exception.message) : "Internal Server Error";
 
     // Log the error with stack trace
     this.logger.error(`${request.method} ${request.url} - ${status}: ${exception.stack}`);
@@ -29,7 +29,6 @@ export class GlobalExceptionsFilter implements ExceptionFilter {
       success: false,
       error: message,
       statusCode: status,
-      timestamp: new Date().toISOString(),
       path: request.url
     });
   }

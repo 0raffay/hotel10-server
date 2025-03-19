@@ -9,13 +9,14 @@ import {
 } from '@nestjs/common';
 import { HotelsService } from './hotels.service';
 import { Prisma } from '@prisma/client';
+import { CreateHotelDto } from './dto/create-hotel.dto';
 
 @Controller('hotels')
 export class HotelsController {
   constructor(private readonly hotelsService: HotelsService) {}
 
   @Post()
-  create(@Body() createHotelDto: Prisma.HotelCreateInput) {
+  create(@Body() createHotelDto: CreateHotelDto) {
     return this.hotelsService.create(createHotelDto);
   }
 
