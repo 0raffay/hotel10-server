@@ -7,8 +7,9 @@ import { CreateHotelDto } from './dto/create-hotel.dto';
 export class HotelsService {
   constructor(private readonly database: DatabaseService) {}
 
-  async create(createHotelDto: CreateHotelDto) {
-    return await this.database.hotel.create({
+  async create(createHotelDto: CreateHotelDto, tx?: Prisma.TransactionClient) {
+    const db = tx || this.database;
+    return await db.hotel.create({
       data: createHotelDto
     });;
   }

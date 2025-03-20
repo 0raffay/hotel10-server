@@ -9,13 +9,13 @@ datasource db {
 
 model User {
   id Int @id @default(autoincrement())
-  email       String @unique 
+  email       String
   password    String 
 
   username   String
   firstName   String?
   lastName    String?
-  phone       String? @unique 
+  phone       String? 
 
   branchId    Int
   branch      Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
@@ -23,6 +23,7 @@ model User {
   createdAt   DateTime @default(now()) 
   updatedAt   DateTime @updatedAt 
 
+  @@unique([email, branchId])
   @@map("users")
 }
 
@@ -43,12 +44,12 @@ model Hotel {
 
 model Branch {
   id               Int    @id @default(autoincrement()) 
-  hotelId          Int    
   name             String 
   location         String 
-  email            String @unique 
+  email            String 
   phone            String 
   whatsapp         String? 
+  hotelId          Int    
   hotel            Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   createdAt        DateTime @default(now()) 
   updatedAt        DateTime @updatedAt 
@@ -56,21 +57,24 @@ model Branch {
 
   @@map("branches")
 }
-
 model HotelOwner {
-  id          Int    @id @default(autoincrement()) 
-  hotelId     Int    
-  name        String 
-  cnic        String @unique 
-  address     String 
-  phone       String 
-  email       String @unique 
-  hotel       Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  createdAt   DateTime @default(now()) 
-  updatedAt   DateTime @updatedAt 
+  id        Int     @id @default(autoincrement()) 
+  hotelId   Int     
+  name      String  
+  cnic      String  
+  address   String  
+  phone     String  
+  email     String  
+  hotel     Hotel   @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())  
+  updatedAt DateTime @updatedAt  
+
+  @@unique([cnic, hotelId]) 
+  @@unique([email, hotelId]) 
 
   @@map("hotel_owners")
 }
+
 
 model Role {
   id         Int    @id @default(autoincrement()) 

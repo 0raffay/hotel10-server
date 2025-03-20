@@ -5,10 +5,19 @@ import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { HotelsService } from '@/hotels/hotels.service';
 import { OwnerService } from '@/owner/owner.service';
+import { BranchService } from '@/branch/branch.service';
+import { DatabaseService } from '@/common/database/database.service';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly usersService: UsersService, private readonly hotelService: HotelsService, private readonly ownerService: OwnerService, private readonly jwtService: JwtService) {}
+  constructor(
+    private jwtService: JwtService,
+    private database: DatabaseService,
+    private usersService: UsersService,
+    private hotelService: HotelsService,
+    private ownerService: OwnerService,
+    private branchService: BranchService
+  ) {}
 
   async validateUser(email: string, password: string) {
     const user = await this.usersService.findUserByEmail(email);
@@ -26,26 +35,33 @@ export class AuthService {
     const { password, ...payload } = user;
     return {
       ...payload,
-      accessToken: this.jwtService.sign(payload),
+      accessToken: this.jwtService.sign(payload)
     };
   }
 
   async register(registerDto: RegisterDto) {
-    const hotel = await this.hotelService.create(registerDto.hotel);
-    const owner = await this.ownerService.create(registerDto.owners.map(owner => {
-      return {
-        ...owner, hotelId: hotel.id
-      }
-    }))
-//     const existingUser = await this.usersService.findUserByEmail(user.email);
-//     if (existingUser) {
-//       throw new BadRequestException('email already exists');
-//     }
-//     const hashedPassword = await bcrypt.hash(user.password, 10);
-//     return this.login({});
-    return {
-      hotel,
-      owner
-    }
+    return await this.database.$transaction(async (tx) => {
+      const hotel = await this.hotelService.create(registerDto.hotel, tx);
+
+      const owners = await this.ownerService.create(
+        registerDto.owners.map((owner) => ({
+          ...owner,
+          hotelId: hotel.id
+        })),
+        tx
+      );
+
+      const branch = await this.branchService.create(
+        { ...registerDto.branch, hotelId: hotel.id },
+        tx
+      );
+
+      const user = await this.usersService.create(
+        { ...registerDto.user, branchId: branch.id },
+        tx
+      );
+
+      return { hotel, owners, branch, user };
+    });
   }
 }

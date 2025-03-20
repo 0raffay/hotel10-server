@@ -8,9 +8,10 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth-guard';
 import { APP_GUARD } from '@nestjs/core';
 import { OwnerService } from './owner/owner.service';
 import { OwnerModule } from './owner/owner.module';
+import { BranchModule } from './branch/branch.module';
 
 @Module({
-  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule],
+  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule, BranchModule],
   controllers: [],
   providers: [
     {

@@ -8,6 +8,7 @@ import { UsersModule } from '@/users/users.module';
 import { JwtStrategy } from './passport/jwt.strategy';
 import { HotelsModule } from '@/hotels/hotels.module';
 import { OwnerModule } from '@/owner/owner.module';
+import { BranchModule } from '@/branch/branch.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { OwnerModule } from '@/owner/owner.module';
     UsersModule,
     HotelsModule,
     OwnerModule,
+    BranchModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '60s' }

@@ -14,6 +14,6 @@ async function bootstrap() {
   }));
   app.useGlobalFilters(new GlobalExceptionsFilter());
   app.useGlobalInterceptors(new SuccessResponseInterceptor());
-  await app.listen(process.env.PORT ?? 8800);
+  await app.listen(process.env.PORT ?? 7000);
 }
 bootstrap();
