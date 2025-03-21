@@ -1,9 +1,15 @@
-import { IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength } from "class-validator";
+import { IsEmail, IsNotEmpty, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class CreateHotelDto {
   @IsString()
   @IsNotEmpty()
   name: string;
+
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  phone: string;
 
   @IsOptional()
   @IsUrl()

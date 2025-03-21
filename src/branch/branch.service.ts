@@ -7,18 +7,11 @@ import { Prisma } from '@prisma/client';
 export class BranchService {
   constructor(private readonly database: DatabaseService) {}
 
-  async create(
-    createBranchDto: CreateBranchDto,
-    tx?: Prisma.TransactionClient
-  ) {
+  async create(createBranchDto: CreateBranchDto, tx?: Prisma.TransactionClient) {
     const db = tx || this.database;
-    const branchExists = await this.checkIfBranchExists(
-      createBranchDto.email,
-      createBranchDto.hotelId
-    );
+    const branchExists = await this.checkIfBranchExists(createBranchDto.email, createBranchDto.hotelId);
     console.log('branchExists', branchExists);
-    if (branchExists)
-      throw new BadRequestException('Branch with same email already exists.');
+    if (branchExists) throw new BadRequestException('Branch with same email already exists.');
     return await db.branch.create({
       data: createBranchDto
     });

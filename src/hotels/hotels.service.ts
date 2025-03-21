@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '@/common/database/database.service';
 import { Prisma } from '@prisma/client';
 import { CreateHotelDto } from './dto/create-hotel.dto';
@@ -9,9 +9,11 @@ export class HotelsService {
 
   async create(createHotelDto: CreateHotelDto, tx?: Prisma.TransactionClient) {
     const db = tx || this.database;
+    const hotelExists = await this.findHotelByEmail(createHotelDto.email);
+    if (hotelExists) throw new BadRequestException('Hotel with same email already exists.');
     return await db.hotel.create({
       data: createHotelDto
-    });;
+    });
   }
 
   async findAll() {
@@ -34,6 +36,14 @@ export class HotelsService {
   async remove(id: number) {
     return await this.database.hotel.delete({
       where: { id }
+    });
+  }
+
+  async findHotelByEmail(email: string) {
+    return await this.database.hotel.findFirst({
+      where: {
+        email: email.trim().toLowerCase()
+      }
     });
   }
 }

@@ -11,22 +11,19 @@ export class OwnerService {
     const existingOwner = await this.database.hotelOwner.findFirst({
       where: {
         hotelId: owner.hotelId,
-        OR: [
-          { email: owner.email },
-          { cnic: owner.cnic }
-        ]
+        OR: [{ email: owner.email }, { cnic: owner.cnic }]
       }
     });
-    
+
     if (existingOwner) {
       throw new ConflictException('Owner with this email or CNIC already exists.');
     }
   }
 
   async create(createOwnerDto: CreateOwnerDto[], tx?: Prisma.TransactionClient) {
-      const db = tx || this.database;
+    const db = tx || this.database;
     return await Promise.all(
-      createOwnerDto.map(async owner => {
+      createOwnerDto.map(async (owner) => {
         await this.checkIfOwnerExists(owner);
         return db.hotelOwner.create({ data: owner });
       })

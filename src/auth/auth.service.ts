@@ -7,6 +7,7 @@ import { HotelsService } from '@/hotels/hotels.service';
 import { OwnerService } from '@/owner/owner.service';
 import { BranchService } from '@/branch/branch.service';
 import { DatabaseService } from '@/common/database/database.service';
+import { transformUserResponse } from '@/common/helpers/utils';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +20,7 @@ export class AuthService {
     private branchService: BranchService
   ) {}
 
-  async validateUser(email: string, password: string) {
+  async validateUser(email: string, password: string): Promise<Record<string, unknown>> {
     const user = await this.usersService.findUserByEmail(email);
     if (!user) {
       throw new BadRequestException('User not found');
@@ -28,21 +29,20 @@ export class AuthService {
     if (!isMatch) {
       throw new BadRequestException('Password does not match');
     }
-    return user;
+    return transformUserResponse(user);
   }
 
   async login(user: any) {
     const { password, ...payload } = user;
     return {
       ...payload,
-      accessToken: this.jwtService.sign(payload)
+      accessToken: this.jwtService.sign({ id: payload.id, email: payload.email })
     };
   }
 
   async register(registerDto: RegisterDto) {
     return await this.database.$transaction(async (tx) => {
       const hotel = await this.hotelService.create(registerDto.hotel, tx);
-
       const owners = await this.ownerService.create(
         registerDto.owners.map((owner) => ({
           ...owner,
@@ -50,18 +50,15 @@ export class AuthService {
         })),
         tx
       );
+      const branch = await this.branchService.create({ ...registerDto.branch, hotelId: hotel.id, email: hotel.email }, tx);
+      const user = await this.usersService.create({ ...registerDto.user, username: `${hotel.name}`, branchId: branch.id, email: hotel.email, phone: hotel.phone }, tx);
 
-      const branch = await this.branchService.create(
-        { ...registerDto.branch, hotelId: hotel.id },
-        tx
-      );
-
-      const user = await this.usersService.create(
-        { ...registerDto.user, branchId: branch.id },
-        tx
-      );
-
-      return { hotel, owners, branch, user };
+      return {
+        hotel,
+        owners,
+        branch,
+        user: { ...user, password: undefined }
+      };
     });
   }
 }

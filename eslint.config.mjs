@@ -27,6 +27,8 @@ export default tseslint.config(
   },
   {
     rules: {
+      'no-console': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error'], // Disallows unused variables
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-argument': 'warn'

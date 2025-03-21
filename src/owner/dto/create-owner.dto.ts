@@ -4,7 +4,7 @@ export class CreateOwnerDto {
   @IsNumber()
   @IsOptional()
   hotelId: number;
-  
+
   @IsString()
   @IsNotEmpty()
   name: string;

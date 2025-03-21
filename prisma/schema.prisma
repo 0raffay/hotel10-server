@@ -9,7 +9,7 @@ datasource db {
 
 model User {
   id Int @id @default(autoincrement())
-  email       String
+  email       String @unique
   password    String 
 
   username   String
@@ -23,17 +23,18 @@ model User {
   createdAt   DateTime @default(now()) 
   updatedAt   DateTime @updatedAt 
 
-  @@unique([email, branchId])
   @@map("users")
 }
 
 model Hotel {
   id              Int    @id @default(autoincrement()) 
   name            String 
+  email           String @unique
   website         String? 
   socialLinks     Json?  
   businessCard    String? 
   letterHead      String? 
+  phone           String
   branches        Branch[]
   owners          HotelOwner[]
   createdAt       DateTime @default(now()) 

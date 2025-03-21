@@ -1,12 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Param,
-  Delete,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
 import { HotelsService } from './hotels.service';
 import { Prisma } from '@prisma/client';
 import { CreateHotelDto } from './dto/create-hotel.dto';
