@@ -1,9 +1,9 @@
 import { CreateBranchDto } from '@/branch/dto/create-branch.dto';
 import { CreateHotelDto } from '@/hotels/dto/create-hotel.dto';
 import { CreateOwnerDto } from '@/owner/dto/create-owner.dto';
-import { CreateUserDto } from '@/users/dto/create-user.dto';
 import { Type } from 'class-transformer';
 import { ArrayMaxSize, IsArray, ValidateNested } from 'class-validator';
+import { AuthCreateUserDto } from './auth-create-user.dto';
 
 export class RegisterDto {
   @ValidateNested()
@@ -21,6 +21,6 @@ export class RegisterDto {
   owners: CreateOwnerDto[];
 
   @ValidateNested()
-  @Type(() => CreateUserDto)
-  user: CreateUserDto;
+  @Type(() => AuthCreateUserDto)
+  user: AuthCreateUserDto;
 }

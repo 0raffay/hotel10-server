@@ -4,14 +4,15 @@ import { HotelsModule } from './hotels/hotels.module';
 import { DatabaseModule } from './common/database/database.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtStrategy } from './auth/passport/jwt.strategy';
-import { JwtAuthGuard } from './auth/guards/jwt-auth-guard';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { APP_GUARD } from '@nestjs/core';
 import { OwnerService } from './owner/owner.service';
 import { OwnerModule } from './owner/owner.module';
 import { BranchModule } from './branch/branch.module';
+import { RoomModule } from './room/room.module';
 
 @Module({
-  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule, BranchModule],
+  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule, BranchModule, RoomModule],
   controllers: [],
   providers: [
     {

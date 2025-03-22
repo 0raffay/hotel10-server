@@ -20,10 +20,18 @@ model User {
   branchId Int
   branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
+  role     UserRoles
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("users")
+}
+
+enum UserRoles {
+  admin
+  manager
+  agent
 }
 
 model Hotel {
@@ -78,13 +86,6 @@ model HotelOwner {
   @@map("hotel_owners")
 }
 
-model Role {
-  id   Int    @id @default(autoincrement())
-  name String @unique
-
-  @@map("roles")
-}
-
 model Room {
   id         Int    @id @default(autoincrement())
   roomNumber String
@@ -93,14 +94,14 @@ model Room {
 
   roomType       String
   bedType        String
-  occupancyLimit Int
+  capacity Int
   price          Int
-  status         String
+  status         RoomStatus
 
-  description String
+  description String?
   photos      RoomPhotos[]
 
-  roomResources RoomResource[] // Relation to allocated resources
+  roomResources RoomResource[]
 
   reservations Reservation[]
 
@@ -109,9 +110,9 @@ model Room {
 }
 
 enum RoomStatus {
-  AVAILABLE
-  OCCUPIED
-  UNDER_MAINTAINANCE
+  available
+  booked
+  under_maintainance
 }
 
 model RoomPhotos {

@@ -19,7 +19,7 @@ import { BranchModule } from '@/branch/branch.module';
     BranchModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: '60s' }
+      signOptions: { expiresIn: '7d' }
     })
   ],
   providers: [AuthService, LocalStrategy, JwtStrategy],

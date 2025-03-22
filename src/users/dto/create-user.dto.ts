@@ -1,8 +1,8 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+import { Role } from '@/common/types';
+import { IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateUserDto {
   @IsNumber()
-  @IsOptional()
   branchId: number;
 
   @IsString()
@@ -28,4 +28,7 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   phone: string;
+
+  @IsEnum(Role)
+  role: Role;
 }

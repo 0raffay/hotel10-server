@@ -8,6 +8,7 @@ import { OwnerService } from '@/owner/owner.service';
 import { BranchService } from '@/branch/branch.service';
 import { DatabaseService } from '@/common/database/database.service';
 import { transformUserResponse } from '@/common/helpers/utils';
+import { Role } from '@/common/types';
 
 @Injectable()
 export class AuthService {
@@ -36,7 +37,7 @@ export class AuthService {
     const { password, ...payload } = user;
     return {
       ...payload,
-      accessToken: this.jwtService.sign({ id: payload.id, email: payload.email })
+      accessToken: this.jwtService.sign({ id: payload.id, email: payload.email, role: payload.role })
     };
   }
 
@@ -51,7 +52,7 @@ export class AuthService {
         tx
       );
       const branch = await this.branchService.create({ ...registerDto.branch, hotelId: hotel.id, email: hotel.email }, tx);
-      const user = await this.usersService.create({ ...registerDto.user, username: `${hotel.name}`, branchId: branch.id, email: hotel.email, phone: hotel.phone }, tx);
+      const user = await this.usersService.create({ ...registerDto.user, username: `${hotel.name}`, branchId: branch.id, email: hotel.email, phone: hotel.phone, role: Role.ADMIN }, tx);
 
       return {
         hotel,
