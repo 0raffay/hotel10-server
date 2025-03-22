@@ -8,78 +8,252 @@ datasource db {
 }
 
 model User {
-  id Int @id @default(autoincrement())
-  email       String @unique
-  password    String 
+  id       Int    @id @default(autoincrement())
+  email    String @unique
+  password String
 
-  username   String
-  firstName   String?
-  lastName    String?
-  phone       String? 
+  username  String
+  firstName String?
+  lastName  String?
+  phone     String?
 
-  branchId    Int
-  branch      Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  branchId Int
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
-  createdAt   DateTime @default(now()) 
-  updatedAt   DateTime @updatedAt 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("users")
 }
 
 model Hotel {
-  id              Int    @id @default(autoincrement()) 
-  name            String 
-  email           String @unique
-  website         String? 
-  socialLinks     Json?  
-  businessCard    String? 
-  letterHead      String? 
-  phone           String
-  branches        Branch[]
-  owners          HotelOwner[]
-  createdAt       DateTime @default(now()) 
-  updatedAt       DateTime @updatedAt 
+  id           Int          @id @default(autoincrement())
+  name         String
+  email        String       @unique
+  website      String?
+  socialLinks  Json?
+  businessCard String?
+  letterHead   String?
+  phone        String
+  branches     Branch[]
+  owners       HotelOwner[]
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
 
   @@map("hotels")
 }
 
 model Branch {
-  id               Int    @id @default(autoincrement()) 
-  name             String 
-  location         String 
-  email            String 
-  phone            String 
-  whatsapp         String? 
-  hotelId          Int    
-  hotel            Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  createdAt        DateTime @default(now()) 
-  updatedAt        DateTime @updatedAt 
-  staff            User[]
+  id        Int        @id @default(autoincrement())
+  name      String
+  location  String
+  email     String
+  phone     String
+  whatsapp  String?
+  hotelId   Int
+  hotel     Hotel      @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  staff     User[]
+  rooms     Room[]
+  resources Resource[]
 
   @@map("branches")
 }
+
 model HotelOwner {
-  id        Int     @id @default(autoincrement()) 
-  hotelId   Int     
-  name      String  
-  cnic      String  
-  address   String  
-  phone     String  
-  email     String  
-  hotel     Hotel   @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())  
-  updatedAt DateTime @updatedAt  
+  id        Int      @id @default(autoincrement())
+  hotelId   Int
+  name      String
+  cnic      String
+  address   String
+  phone     String
+  email     String
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@unique([cnic, hotelId]) 
-  @@unique([email, hotelId]) 
-
+  @@unique([cnic, hotelId])
+  @@unique([email, hotelId])
   @@map("hotel_owners")
 }
 
-
 model Role {
-  id         Int    @id @default(autoincrement()) 
-  name       String @unique 
+  id   Int    @id @default(autoincrement())
+  name String @unique
 
   @@map("roles")
+}
+
+model Room {
+  id         Int    @id @default(autoincrement())
+  roomNumber String
+  branchId   Int
+  branch     Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  roomType       String
+  bedType        String
+  occupancyLimit Int
+  price          Int
+  status         String
+
+  description String
+  photos      RoomPhotos[]
+
+  roomResources RoomResource[] // Relation to allocated resources
+
+  reservations Reservation[]
+
+  @@unique([roomNumber, branchId])
+  @@map("rooms")
+}
+
+enum RoomStatus {
+  AVAILABLE
+  OCCUPIED
+  UNDER_MAINTAINANCE
+}
+
+model RoomPhotos {
+  id     Int    @id @default(autoincrement())
+  url    String
+  roomId Int
+  room   Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("room_photos")
+}
+
+model Resource {
+  id       Int          @id @default(autoincrement())
+  name     String
+  type     ResourceType
+  branchId Int
+  branch   Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  reusable      Boolean
+  inventory     Int
+  defaultCharge Int?
+  chargeType    ChargeType?
+
+  roomResources        RoomResource[]
+  reservationResources ReservationResource[]
+  DamageReport         DamageReport[]
+
+  @@map("resources")
+}
+
+enum ResourceType {
+  AMENITY
+  FACILITY
+}
+
+enum ChargeType {
+  INTERNAL
+  EXTERNAL
+}
+
+model RoomResource {
+  id     Int  @id @default(autoincrement())
+  roomId Int
+  room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  resourceId Int
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  quantity Int
+  damaged  Boolean @default(false)
+
+  @@map("room_resources")
+}
+
+model ReservationResource {
+  id            Int         @id @default(autoincrement())
+  reservationId Int
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  resourceId Int
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  quantity Int
+  damaged  Boolean @default(false)
+
+  @@map("reservation_resources")
+}
+
+model DamageReport {
+  id         Int      @id @default(autoincrement())
+  resourceId Int
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  reportedBy Int
+  reportedAt DateTime @default(now())
+
+  roomId        Int?
+  reservationId Int?
+
+  status DamageStatus
+  notes  String?
+
+  @@map("damage_reports")
+}
+
+enum DamageStatus {
+  PENDING
+  UNDER_REPAIR
+  REPLACED
+}
+
+model Guest {
+  id           Int           @id @default(autoincrement())
+  name         String
+  email        String?       @unique
+  phone        String?
+  cnic         String        @unique
+  passport     String?
+  dateOfBirth  DateTime?
+  address      String?
+  nationality  String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  reservations Reservation[]
+
+  @@map("guests")
+}
+
+model Reservation {
+  id          Int   @id @default(autoincrement())
+  guestId     Int
+  guest       Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  totalGuests Int
+
+  roomId Int
+  room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  checkInDate  DateTime
+  checkOutDate DateTime
+
+  status              ReservationStatus
+  ReservationResource ReservationResource[]
+
+  totalAmount   Float
+  paymentStatus PaymentStatus
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("reservations")
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  CANCELLED
+  CHECKED_IN
+  CHECKED_OUT
+}
+
+enum PaymentStatus {
+  UNPAID
+  PAID
+  REFUNDED
 }
