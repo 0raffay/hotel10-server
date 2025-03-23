@@ -10,9 +10,10 @@ import { OwnerService } from './owner/owner.service';
 import { OwnerModule } from './owner/owner.module';
 import { BranchModule } from './branch/branch.module';
 import { RoomModule } from './room/room.module';
+import { ResourcesModule } from './resources/resources.module';
 
 @Module({
-  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule, BranchModule, RoomModule],
+  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule, BranchModule, RoomModule, ResourcesModule],
   controllers: [],
   providers: [
     {
@@ -21,6 +22,7 @@ import { RoomModule } from './room/room.module';
     },
     JwtStrategy,
     OwnerService
-  ]
+  ],
+  exports: []
 })
 export class AppModule {}

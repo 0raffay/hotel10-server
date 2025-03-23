@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DatabaseService } from '@/common/database/database.service';
 import * as bcrypt from 'bcrypt';
-import { Prisma } from '@prisma/client';
+import { Prisma, User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 
 @Injectable()
@@ -50,7 +50,7 @@ export class UsersService {
     });
   }
 
-  async findUserByEmail(email: string) {
+  async findUserByEmail(email: string): Promise<User | null> {
     return await this.database.user.findFirst({
       where: {
         email: email

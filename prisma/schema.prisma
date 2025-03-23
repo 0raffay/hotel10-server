@@ -144,13 +144,13 @@ model Resource {
 }
 
 enum ResourceType {
-  AMENITY
-  FACILITY
+  amenity
+  facility
 }
 
 enum ChargeType {
-  INTERNAL
-  EXTERNAL
+  internal
+  external
 }
 
 model RoomResource {
