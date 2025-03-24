@@ -25,8 +25,9 @@ export enum Role {
   AGENT = "agent"
 }
 
-export enum RoomStatus {
-  AVAILABLE = "available",
-  BOOKED = "booked",
-  UNDER_MAINTENANCE = "under_maintenance",
+export interface IAuthUser {
+  id: number,
+  email: string,
+  role: Role,
+  branchId: number
 }

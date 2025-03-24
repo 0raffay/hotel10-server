@@ -10,27 +10,27 @@ export class RoomController implements ICrudController<Room, CreateRoomDto, Upda
   constructor(private readonly roomService: RoomService) {}
 
   @Post()
-  create(@Body() creatRoomDto: CreateRoomDto, @Req() req: any) {
-    return this.roomService.create(creatRoomDto, req.user);
+  create(@Body() creatRoomDto: CreateRoomDto, ) {
+    return this.roomService.create(creatRoomDto);
   }
 
   @Get()
-  findAll(@Req() req: any) {
-    return this.roomService.findAll(req.user);
+  findAll() {
+    return this.roomService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Req() req: any) {
-    return this.roomService.findOne(+id, req.user);
+  findOne(@Param('id') id: string) {
+    return this.roomService.findOne(+id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto, @Req() req: any) {
-    return this.roomService.update(+id, updateRoomDto, req.user);
+  update(@Param('id') id: string, @Body() updateRoomDto: UpdateRoomDto, ) {
+    return this.roomService.update(+id, updateRoomDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req: any) {
-    return this.roomService.remove(+id, req.user);
+  remove(@Param('id') id: string, ) {
+    return this.roomService.remove(+id);
   }
 }

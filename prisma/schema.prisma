@@ -20,7 +20,7 @@ model User {
   branchId Int
   branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
-  role     UserRoles
+  role UserRoles
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -65,6 +65,7 @@ model Branch {
   staff     User[]
   rooms     Room[]
   resources Resource[]
+  reservations Reservation[]
 
   @@map("branches")
 }
@@ -92,11 +93,11 @@ model Room {
   branchId   Int
   branch     Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
-  roomType       String
-  bedType        String
+  roomType String
+  bedType  String
   capacity Int
-  price          Int
-  status         RoomStatus
+  price    Int
+  status   RoomStatus
 
   description String?
   photos      RoomPhotos[]
@@ -199,9 +200,9 @@ model DamageReport {
 }
 
 enum DamageStatus {
-  PENDING
-  UNDER_REPAIR
-  REPLACED
+  pending
+  under_repair
+  replaced
 }
 
 model Guest {
@@ -209,7 +210,7 @@ model Guest {
   name         String
   email        String?       @unique
   phone        String?
-  cnic         String        @unique
+  cnic         String?        @unique
   passport     String?
   dateOfBirth  DateTime?
   address      String?
@@ -230,8 +231,13 @@ model Reservation {
   roomId Int
   room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
+  branchId Int
+  branch   Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
   checkInDate  DateTime
   checkOutDate DateTime
+
+  stayDuration Float
 
   status              ReservationStatus
   ReservationResource ReservationResource[]
@@ -246,15 +252,15 @@ model Reservation {
 }
 
 enum ReservationStatus {
-  PENDING
-  CONFIRMED
-  CANCELLED
-  CHECKED_IN
-  CHECKED_OUT
+  pending
+  confirmed
+  cancelled
+  checked_in
+  checked_out
 }
 
 enum PaymentStatus {
-  UNPAID
-  PAID
-  REFUNDED
+  unpaid
+  paid
+  refunded
 }

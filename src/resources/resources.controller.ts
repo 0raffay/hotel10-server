@@ -10,27 +10,27 @@ export class ResourcesController implements ICrudController<Resource, CreateReso
   constructor(private readonly resourceService: ResourcesService) {}
 
   @Post()
-  create(@Body() createResourceDto: CreateResourceDto, @Req() req: any) {
-    return this.resourceService.create(createResourceDto, req.user);
+  create(@Body() createResourceDto: CreateResourceDto) {
+    return this.resourceService.create(createResourceDto);
   }
 
   @Get()
-  findAll(@Req() req: any) {
-    return this.resourceService.findAll(req.user);
+  findAll() {
+    return this.resourceService.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string, @Req() req: any) {
-    return this.resourceService.findOne(+id, req.user);
+  findOne(@Param('id') id: string, ) {
+    return this.resourceService.findOne(+id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateResourceDto: UpdateResourceDto, @Req() req: any) {
-    return this.resourceService.update(+id, updateResourceDto, req.user);
+  update(@Param('id') id: string, @Body() updateResourceDto: UpdateResourceDto, ) {
+    return this.resourceService.update(+id, updateResourceDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string, @Req() req: any) {
-    return this.resourceService.remove(+id, req.user);
+  remove(@Param('id') id: string, ) {
+    return this.resourceService.remove(+id);
   }
 }

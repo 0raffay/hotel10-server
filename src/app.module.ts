@@ -11,9 +11,10 @@ import { OwnerModule } from './owner/owner.module';
 import { BranchModule } from './branch/branch.module';
 import { RoomModule } from './room/room.module';
 import { ResourcesModule } from './resources/resources.module';
+import { ReservationsModule } from './reservations/reservations.module';
 
 @Module({
-  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule, BranchModule, RoomModule, ResourcesModule],
+  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule, BranchModule, RoomModule, ResourcesModule, ReservationsModule],
   controllers: [],
   providers: [
     {
