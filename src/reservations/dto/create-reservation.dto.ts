@@ -1,10 +1,20 @@
+import { CreateGuestDto } from "@/guests/dto/create-guest.dto";
 import { ReservationStatus } from "@prisma/client";
-import { Transform } from "class-transformer";
-import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsOptional, MinDate } from "class-validator";
+import { Transform, Type } from "class-transformer";
+import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, MinDate, ValidateIf, ValidateNested } from "class-validator";
 
 export class CreateReservationDto {
+  @ValidateIf((o) => !o.guest) // guestId is required if guest object is not provided
+  @IsNotEmpty({ message: "Guest ID is required if no guest object is provided" })
   @IsNumber()
   guestId: number;
+
+  @ValidateIf((o) => !o.guestId) // guest object is required if guestId is not provided
+  @IsNotEmpty({ message: "Guest object is required if no guestId is provided" })
+  @ValidateNested()
+  @IsObject()
+  @Type(() => CreateGuestDto)
+  guest: CreateGuestDto;
 
   @IsNumber()
   branchId: number;

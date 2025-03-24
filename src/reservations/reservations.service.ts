@@ -1,28 +1,31 @@
+import { DatabaseService } from '@/common/database/database.service';
+import { matchUserBranchWithEntity } from '@/common/helpers/utils';
+import { GuestsService } from '@/guests/guests.service';
+import { RoomService } from '@/room/room.service';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { REQUEST } from '@nestjs/core';
+import { differenceInMilliseconds, millisecondsToHours } from 'date-fns';
+import { Request } from 'express';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
-import { DatabaseService } from '@/common/database/database.service';
-import { differenceInMilliseconds, millisecondsToHours } from 'date-fns';
-import { RoomService } from '@/room/room.service';
-import { matchUserBranchWithEntity } from '@/common/helpers/utils';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
 
 @Injectable()
 export class ReservationsService {
   constructor(
     @Inject(REQUEST) private request: Request,
     private database: DatabaseService,
-    private roomService: RoomService
+    private roomService: RoomService,
+    private guestService: GuestsService
   ) {}
 
   async create(createReservationDto: CreateReservationDto) {
     const stayDuration = this.getReservationDuration(createReservationDto.checkInDate, createReservationDto.checkOutDate);
-
     const totalAmount = this.getReservationAmount(stayDuration ,(await this.roomService.getRoomPriceById(createReservationDto.roomId)));
 
+    const guestId = createReservationDto.guestId ? createReservationDto.guestId :  (await this.guestService.create(createReservationDto.guest)).id
+
     return await this.database.reservation.create({
-      data: { ...createReservationDto, stayDuration, totalAmount, paymentStatus: "unpaid", status: createReservationDto.status || "confirmed"  }
+      data: { ...createReservationDto, guestId, stayDuration, totalAmount, paymentStatus: "unpaid", status: createReservationDto.status || "confirmed", guest: undefined  }
     });
   }
 
@@ -50,7 +53,7 @@ export class ReservationsService {
         id: id
       }
     });
-    if (!record) throw new BadRequestException(`Room with id ${id} not found`);
+    if (!record) throw new BadRequestException(`Record with id ${id} not found`);
     matchUserBranchWithEntity(this.request.user, record.branchId);
     return record;
   }
