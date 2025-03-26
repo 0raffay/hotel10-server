@@ -133,13 +133,12 @@ model Resource {
   branch   Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   reusable      Boolean
-  inventory     Int
+  quantity     Int
   defaultCharge Int?
   chargeType    ChargeType?
 
   roomResources        RoomResource[]
   reservationResources ReservationResource[]
-  DamageReport         DamageReport[]
 
   @@map("resources")
 }
@@ -163,7 +162,8 @@ model RoomResource {
   resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   quantity Int
-  damaged  Boolean @default(false)
+
+  damageReports DamageReport[]
 
   @@map("room_resources")
 }
@@ -177,21 +177,25 @@ model ReservationResource {
   resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
 
   quantity Int
-  damaged  Boolean @default(false)
+
+  damageReports DamageReport[]
 
   @@map("reservation_resources")
 }
 
 model DamageReport {
   id         Int      @id @default(autoincrement())
-  resourceId Int
-  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade)
+
+  reservationResourceId Int?
+  reservationResource   ReservationResource? @relation(fields: [reservationResourceId], references: [id], onDelete: Cascade)
+
+  roomResourceId Int?
+  roomResource   RoomResource? @relation(fields: [roomResourceId], references: [id], onDelete: Cascade)
+
+  damagedQuantity Int
 
   reportedBy Int
   reportedAt DateTime @default(now())
-
-  roomId        Int?
-  reservationId Int?
 
   status DamageStatus
   notes  String?

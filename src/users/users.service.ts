@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '@/common/database/database.service';
 import * as bcrypt from 'bcrypt';
 import { Prisma, User } from '@prisma/client';
@@ -25,7 +25,7 @@ export class UsersService {
   }
 
   async findOne(id: number) {
-    return await this.database.user.findUnique({
+    const user = await this.database.user.findFirst({
       where: { id },
       include: {
         branch: {
@@ -35,6 +35,10 @@ export class UsersService {
         }
       }
     });
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`)
+    }
+    return user;
   }
 
   async update(id: number, updateUserDto: Prisma.UserUpdateInput) {

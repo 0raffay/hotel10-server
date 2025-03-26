@@ -53,7 +53,7 @@ export class ReservationsService {
         id: id
       }
     });
-    if (!record) throw new BadRequestException(`Record with id ${id} not found`);
+    if (!record) throw new BadRequestException(`Reservation with id ${id} not found`);
     matchUserBranchWithEntity(this.request.user, record.branchId);
     return record;
   }

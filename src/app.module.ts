@@ -22,8 +22,7 @@ import { GuestsModule } from './guests/guests.module';
       provide: APP_GUARD,
       useClass: JwtAuthGuard
     },
-    JwtStrategy,
-    OwnerService
+    JwtStrategy
   ],
   exports: []
 })

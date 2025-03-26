@@ -14,7 +14,7 @@ export class CreateResourceDto {
 
   @IsNumber()
   @Min(0)
-  inventory: number;
+  quantity: number;
 
   @IsBoolean()
   @IsNotEmpty()

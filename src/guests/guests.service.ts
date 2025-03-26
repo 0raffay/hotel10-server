@@ -40,7 +40,7 @@ export class GuestsService {
         }
       }
     })
-    if (!record) throw new NotFoundException(`Record with id ${id} not found`);
+    if (!record) throw new NotFoundException(`Guest with id ${id} not found`);
     return record;
   }
 
