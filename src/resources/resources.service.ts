@@ -13,7 +13,12 @@ import { RoomService } from '@/room/room.service';
 
 @Injectable()
 export class ResourcesService implements ICrudService<Resource, CreateResourceDto, UpdateResourceDto> {
-  constructor(@Inject(REQUEST) private request: Request, private database: DatabaseService, private reservationService: ReservationsService, private roomService: RoomService) {}
+  constructor(
+    @Inject(REQUEST) private request: Request,
+    private database: DatabaseService,
+    private reservationService: ReservationsService,
+    private roomService: RoomService
+  ) {}
 
   async create(createResourceDto: CreateResourceDto) {
     matchUserBranchWithEntity(this.request.user, createResourceDto.branchId);
@@ -60,12 +65,18 @@ export class ResourcesService implements ICrudService<Resource, CreateResourceDt
     });
   }
 
+  async updateResourceQuantity(id: number, quantity: number) {
+    return await this.update(id, {
+      quantity
+    });
+  }
+
   async assignResource(assignResourceDto: AssignResourceDto) {
     const { resourceId, reservationId, roomId, quantity } = assignResourceDto;
 
     const resource = await this.findOne(resourceId);
     if (resource.quantity < quantity) {
-      throw new BadRequestException("Not enought resource quantity available");
+      throw new BadRequestException('Not enought resource quantity available');
     }
 
     let assignment: any;
@@ -79,7 +90,7 @@ export class ResourcesService implements ICrudService<Resource, CreateResourceDt
             reservationId,
             quantity
           }
-        })
+        });
       }
     }
 
@@ -92,13 +103,11 @@ export class ResourcesService implements ICrudService<Resource, CreateResourceDt
             roomId,
             quantity
           }
-        })
+        });
       }
     }
 
-    await this.update(resource.id, {
-      quantity: resource.quantity - quantity
-    })
+    await this.updateResourceQuantity(resource.id, resource.quantity - quantity);
 
     return assignment;
   }

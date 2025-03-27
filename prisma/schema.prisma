@@ -163,7 +163,7 @@ model RoomResource {
 
   quantity Int
 
-  damageReports DamageReport[]
+  Damages Damage[]
 
   @@map("room_resources")
 }
@@ -178,12 +178,12 @@ model ReservationResource {
 
   quantity Int
 
-  damageReports DamageReport[]
+  Damages Damage[]
 
   @@map("reservation_resources")
 }
 
-model DamageReport {
+model Damage {
   id         Int      @id @default(autoincrement())
 
   reservationResourceId Int?
