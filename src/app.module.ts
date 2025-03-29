@@ -14,9 +14,10 @@ import { ResourcesModule } from './resources/resources.module';
 import { ReservationsModule } from './reservations/reservations.module';
 import { GuestsModule } from './guests/guests.module';
 import { DamagesModule } from './damages/damages.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
-  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule, BranchModule, RoomModule, ResourcesModule, ReservationsModule, GuestsModule, DamagesModule],
+  imports: [DatabaseModule, UsersModule, HotelsModule, AuthModule, OwnerModule, BranchModule, RoomModule, ResourcesModule, ReservationsModule, GuestsModule, DamagesModule, PaymentModule],
   controllers: [],
   providers: [
     {

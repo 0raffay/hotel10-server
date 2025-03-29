@@ -52,19 +52,19 @@ model Hotel {
 }
 
 model Branch {
-  id        Int        @id @default(autoincrement())
-  name      String
-  location  String
-  email     String
-  phone     String
-  whatsapp  String?
-  hotelId   Int
-  hotel     Hotel      @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  staff     User[]
-  rooms     Room[]
-  resources Resource[]
+  id           Int           @id @default(autoincrement())
+  name         String
+  location     String
+  email        String
+  phone        String
+  whatsapp     String?
+  hotelId      Int
+  hotel        Hotel         @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  staff        User[]
+  rooms        Room[]
+  resources    Resource[]
   reservations Reservation[]
 
   @@map("branches")
@@ -133,8 +133,8 @@ model Resource {
   branch   Branch       @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   reusable      Boolean
-  quantity     Int
-  defaultCharge Int?
+  quantity      Int
+  defaultCharge Float @default(0.0)
   chargeType    ChargeType?
 
   roomResources        RoomResource[]
@@ -184,7 +184,7 @@ model ReservationResource {
 }
 
 model Damage {
-  id         Int      @id @default(autoincrement())
+  id Int @id @default(autoincrement())
 
   reservationResourceId Int?
   reservationResource   ReservationResource? @relation(fields: [reservationResourceId], references: [id], onDelete: Cascade)
@@ -214,7 +214,7 @@ model Guest {
   name         String
   email        String?       @unique
   phone        String?
-  cnic         String?        @unique
+  cnic         String?       @unique
   passport     String?
   dateOfBirth  DateTime?
   address      String?
@@ -236,18 +236,23 @@ model Reservation {
   room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   branchId Int
-  branch   Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   checkInDate  DateTime
   checkOutDate DateTime
 
-  stayDuration Float
+  stayDuration Float?
 
   status              ReservationStatus
   ReservationResource ReservationResource[]
 
-  totalAmount   Float
   paymentStatus PaymentStatus
+
+  payments Payment[]
+
+  totalAmount Float @default(0.0)
+  paidAmount  Float @default(0.0)
+  balance     Float @default(0.0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -263,8 +268,29 @@ enum ReservationStatus {
   checked_out
 }
 
+model Payment {
+  id Int @id @default(autoincrement())
+
+  reservationId Int
+  reservation   Reservation @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  relatedEntityId   Int?
+  type              PaymentType
+  description       String
+  amount            Float
+  tax               Float
+  additionalCharges Float
+  totalAmount       Float
+}
+
+enum PaymentType {
+  guest_payment
+  room_charges
+  resource_charges
+  damage_charges
+}
+
 enum PaymentStatus {
   unpaid
   paid
-  refunded
 }

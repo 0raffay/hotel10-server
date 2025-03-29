@@ -67,8 +67,4 @@ export class RoomService implements ICrudService<Room, CreateRoomDto, UpdateRoom
       }
     });
   }
-
-  async getRoomPriceById(id: number) {
-    return (await this.findOne(id)).price;
-  }
 }

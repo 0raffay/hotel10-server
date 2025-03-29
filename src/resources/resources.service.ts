@@ -3,7 +3,7 @@ import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
 import { DatabaseService } from '@/common/database/database.service';
 import { ICrudService } from '@/common/types';
-import { Resource } from '@prisma/client';
+import { PaymentType, Resource } from '@prisma/client';
 import { matchUserBranchWithEntity } from '@/common/helpers/utils';
 import { Request } from 'express';
 import { REQUEST } from '@nestjs/core';
@@ -72,7 +72,7 @@ export class ResourcesService implements ICrudService<Resource, CreateResourceDt
   }
 
   async assignResource(assignResourceDto: AssignResourceDto) {
-    const { resourceId, reservationId, roomId, quantity } = assignResourceDto;
+    const { resourceId, reservationId, roomId, quantity, chargeDetails } = assignResourceDto;
 
     const resource = await this.findOne(resourceId);
     if (resource.quantity < quantity) {
@@ -91,6 +91,16 @@ export class ResourcesService implements ICrudService<Resource, CreateResourceDt
             quantity
           }
         });
+
+        await this.reservationService.createReservationPayment({
+          type: PaymentType.resource_charges,
+          additionalCharges: chargeDetails.additionalCharges,
+          amount: quantity * (resource.defaultCharge || 0),
+          description: chargeDetails.description,
+          relatedEntityId: resource.id,
+          reservationId: reservation.id,
+          tax: chargeDetails.tax || 0
+        })
       }
     }
 

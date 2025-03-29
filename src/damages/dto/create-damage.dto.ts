@@ -1,5 +1,7 @@
+import { ChargeDetails } from '@/payment/dto/charge-details.dto';
 import { DamageStatus } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsNumber, IsString, Min, ValidateIf } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsDefined, IsEnum, IsNotEmpty, IsNumber, IsString, Min, ValidateIf, ValidateNested } from 'class-validator';
 
 export class CreateDamageDto {
   @IsNumber()
@@ -19,5 +21,10 @@ export class CreateDamageDto {
   roomResourceId?: number;
 
   @IsEnum(DamageStatus)
-  status: DamageStatus
+  status: DamageStatus;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => ChargeDetails)
+  chargeDetails: ChargeDetails;
 }

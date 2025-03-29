@@ -4,12 +4,12 @@ import { Transform, Type } from "class-transformer";
 import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, MinDate, ValidateIf, ValidateNested } from "class-validator";
 
 export class CreateReservationDto {
-  @ValidateIf((o) => !o.guest) // guestId is required if guest object is not provided
+  @ValidateIf((o) => !o.guest)
   @IsNotEmpty({ message: "Guest ID is required if no guest object is provided" })
   @IsNumber()
   guestId: number;
 
-  @ValidateIf((o) => !o.guestId) // guest object is required if guestId is not provided
+  @ValidateIf((o) => !o.guestId)
   @IsNotEmpty({ message: "Guest object is required if no guestId is provided" })
   @ValidateNested()
   @IsObject()
@@ -34,6 +34,7 @@ export class CreateReservationDto {
   @Transform(({ value }) => new Date(value))
   @IsDate({ message: 'checkOutDate must be a valid date' })
   @MinDate(new Date(), { message: 'checkOutDate must be in the future' })
+  @IsOptional()
   checkOutDate: Date;
 
   @IsEnum(ReservationStatus)

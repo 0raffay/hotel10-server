@@ -1,7 +1,7 @@
 import { DatabaseService } from '@/common/database/database.service';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBranchDto } from './dto/create-branch.dto';
-import { Prisma } from '@prisma/client';
+import { Branch, Prisma } from '@prisma/client';
 
 @Injectable()
 export class BranchService {
@@ -14,6 +14,16 @@ export class BranchService {
     return await db.branch.create({
       data: createBranchDto
     });
+  }
+
+  async findOne(id: number): Promise<Branch | null> {
+    const branch = await this.database.branch.findFirst({
+      where: {
+        id: id
+      }
+    });
+    if (!branch) throw new NotFoundException(`Branch with id ${id} not found`);
+    return branch;
   }
 
   async checkIfBranchExists(email: string, hotelId: number) {

@@ -1,4 +1,6 @@
-import { IsInt, IsNumber, IsOptional, Min, ValidateIf } from "class-validator";
+import { IsDefined, IsInt, IsNumber, Min, ValidateIf, ValidateNested } from "class-validator";
+import { Type } from "class-transformer";
+import { ChargeDetails } from "@/payment/dto/charge-details.dto";
 
 export class AssignResourceDto {
   @IsNumber()
@@ -15,4 +17,9 @@ export class AssignResourceDto {
   @ValidateIf((obj) => !obj.reservationId)
   @IsInt()
   roomId?: number;
+
+  @IsDefined()
+  @ValidateNested()
+  @Type(() => ChargeDetails)
+  chargeDetails: ChargeDetails
 }

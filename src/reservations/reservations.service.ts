@@ -4,10 +4,14 @@ import { GuestsService } from '@/guests/guests.service';
 import { RoomService } from '@/room/room.service';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
-import { differenceInMilliseconds, millisecondsToHours } from 'date-fns';
+import { differenceInMilliseconds, isBefore, millisecondsToHours } from 'date-fns';
 import { Request } from 'express';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
+import { PaymentService } from '@/payment/payment.service';
+import { CreatePaymentDto } from '@/payment/dto/create-payment.dto';
+import { Payment, PaymentType, Reservation } from '@prisma/client';
+import { BranchService } from '@/branch/branch.service';
 
 @Injectable()
 export class ReservationsService {
@@ -15,18 +19,23 @@ export class ReservationsService {
     @Inject(REQUEST) private request: Request,
     private database: DatabaseService,
     private roomService: RoomService,
-    private guestService: GuestsService
+    private guestService: GuestsService,
+    private paymentService: PaymentService,
+    private branchService: BranchService
   ) {}
 
   async create(createReservationDto: CreateReservationDto) {
-    const stayDuration = this.getReservationDuration(createReservationDto.checkInDate, createReservationDto.checkOutDate);
-    const totalAmount = this.getReservationAmount(stayDuration ,(await this.roomService.getRoomPriceById(createReservationDto.roomId)));
+    await this.branchService.findOne(createReservationDto.branchId);
+    await this.roomService.findOne(createReservationDto.roomId);
 
-    const guestId = createReservationDto.guestId ? createReservationDto.guestId :  (await this.guestService.create(createReservationDto.guest)).id
-
-    return await this.database.reservation.create({
-      data: { ...createReservationDto, guestId, stayDuration, totalAmount, paymentStatus: "unpaid", status: createReservationDto.status || "confirmed", guest: undefined  }
+    const guestId = createReservationDto.guestId ? createReservationDto.guestId : (await this.guestService.create(createReservationDto.guest)).id;
+    const reservation = await this.database.reservation.create({
+      data: { ...createReservationDto, guestId, paymentStatus: 'unpaid', status: createReservationDto.status || 'confirmed', guest: undefined }
     });
+
+    await this.createReservationRoomPayment(reservation);
+
+    return reservation;
   }
 
   async update(id: number, updateReservationDto: UpdateReservationDto) {
@@ -48,14 +57,18 @@ export class ReservationsService {
   }
 
   async findOne(id: number) {
-    const record = await this.database.reservation.findFirst({
-      where: {
-        id: id
-      }
-    });
+    const record = await this.getById(id);
     if (!record) throw new BadRequestException(`Reservation with id ${id} not found`);
     matchUserBranchWithEntity(this.request.user, record.branchId);
     return record;
+  }
+
+  async getById(id: number): Promise<Reservation | null> {
+    return await this.database.reservation.findFirst({
+      where: {
+        id
+      }
+    })
   }
 
   async remove(id: number) {
@@ -71,7 +84,51 @@ export class ReservationsService {
     return millisecondsToHours(differenceInMilliseconds(checkOutDate, checkInDate)) / 24;
   }
 
-  getReservationAmount(stayDuration: number, pricePerNight: number): number {
-    return stayDuration * pricePerNight;
+  async updateReservationFinance(reservationId: number) {
+    const payments = await this.paymentService.getAllReservationPayments(reservationId);
+
+    const totalAmount = payments.reduce((total, payment) => {
+      if (payment.type !== PaymentType.guest_payment) {
+        total += payment.totalAmount;
+      }
+      return total;
+    }, 0)
+
+    const paidAmount = payments.reduce((totalPaid, payment) => {
+      if (payment.type === PaymentType.guest_payment) {
+        totalPaid += payment.totalAmount;
+      }
+      return totalPaid;
+    }, 0)
+
+    const balance = totalAmount - paidAmount;
+
+    return await this.database.reservation.update({
+      where: {
+        id: reservationId
+      },
+      data: {
+        totalAmount,
+        balance,
+        paidAmount
+      }
+    })
+  }
+
+  async createReservationPayment(paymentData: CreatePaymentDto) {
+    await this.paymentService.create(paymentData);
+    return await this.updateReservationFinance(paymentData.reservationId);
+  }
+
+  async createReservationRoomPayment(reservation: Reservation) {
+    const roomPrice = (await this.roomService.findOne(reservation.roomId)).price;
+    return await this.createReservationPayment({
+      reservationId: reservation.id,
+      type: PaymentType.room_charges,
+      description: `Room charges - ${roomPrice.toLocaleString()}`,
+      amount: roomPrice,
+      additionalCharges: 0,
+      tax: 0
+    });
   }
 }
