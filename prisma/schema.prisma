@@ -17,10 +17,7 @@ model User {
   lastName  String?
   phone     String?
 
-  branchId Int
-  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-
-  role UserRoles
+  branches UserBranch[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -28,7 +25,18 @@ model User {
   @@map("users")
 }
 
-enum UserRoles {
+model UserBranch {
+  id        Int       @id @default(autoincrement())
+  userId    Int
+  branchId  Int
+  role      UserRole
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch    Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+
+  @@map("user_branches")
+}
+
+enum UserRole {
   admin
   manager
   agent
@@ -62,7 +70,7 @@ model Branch {
   hotel        Hotel         @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
-  staff        User[]
+  staff        UserBranch[]
   rooms        Room[]
   resources    Resource[]
   reservations Reservation[]
@@ -134,7 +142,7 @@ model Resource {
 
   reusable      Boolean
   quantity      Int
-  defaultCharge Float @default(0.0)
+  defaultCharge Float       @default(0.0)
   chargeType    ChargeType?
 
   roomResources        RoomResource[]

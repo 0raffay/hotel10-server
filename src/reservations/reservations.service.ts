@@ -2,22 +2,23 @@ import { DatabaseService } from '@/common/database/database.service';
 import { matchUserBranchWithEntity } from '@/common/helpers/utils';
 import { GuestsService } from '@/guests/guests.service';
 import { RoomService } from '@/room/room.service';
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { differenceInMilliseconds, isBefore, millisecondsToHours } from 'date-fns';
-import { Request } from 'express';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { PaymentService } from '@/payment/payment.service';
 import { CreatePaymentDto } from '@/payment/dto/create-payment.dto';
-import { Payment, PaymentType, Reservation } from '@prisma/client';
+import { PaymentType, Reservation } from '@prisma/client';
 import { BranchService } from '@/branch/branch.service';
+import { ContextService } from '@/common/context/context.service';
+import { PermissionsService } from '@/permission/permissions.service';
 
 @Injectable()
 export class ReservationsService {
   constructor(
-    @Inject(REQUEST) private request: Request,
     private database: DatabaseService,
+    private context: ContextService,
+    private permissionsService: PermissionsService,
     private roomService: RoomService,
     private guestService: GuestsService,
     private paymentService: PaymentService,
@@ -51,7 +52,9 @@ export class ReservationsService {
   async findAll() {
     return await this.database.reservation.findMany({
       where: {
-        branchId: this.request.user?.branchId
+        branchId: {
+          in: this.context.getUserBranches()
+        }
       }
     });
   }
@@ -59,7 +62,7 @@ export class ReservationsService {
   async findOne(id: number) {
     const record = await this.getById(id);
     if (!record) throw new BadRequestException(`Reservation with id ${id} not found`);
-    matchUserBranchWithEntity(this.request.user, record.branchId);
+    this.permissionsService.verifyEntityOwnership(record.branchId)
     return record;
   }
 

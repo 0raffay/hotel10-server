@@ -1,13 +1,12 @@
 import { DatabaseService } from '@/common/database/database.service';
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateGuestDto } from './dto/create-guest.dto';
 import { UpdateGuestDto } from './dto/update-guest.dto';
+import { ContextService } from '@/common/context/context.service';
 
 @Injectable()
 export class GuestsService {
-  constructor(@Inject(REQUEST) private request: Request, private database: DatabaseService) {}
+  constructor(private database: DatabaseService, private context: ContextService) {}
 
   async create(createGuestDto: CreateGuestDto) {
     return await this.database.guest.create({
@@ -20,7 +19,9 @@ export class GuestsService {
       include: {
         reservations: {
           where: {
-            branchId: this.request.user?.branchId
+            branchId: {
+              in: this.context.getUserBranches()
+            }
           }
         }
       }
@@ -35,7 +36,9 @@ export class GuestsService {
       include: {
         reservations: {
           where: {
-            branchId: this.request.user?.branchId
+            branchId: {
+              in: this.context.getUserBranches()
+            }
           }
         }
       }

@@ -2,26 +2,25 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
 import { DatabaseService } from '@/common/database/database.service';
-import { ICrudService } from '@/common/types';
-import { PaymentType, Resource } from '@prisma/client';
-import { matchUserBranchWithEntity } from '@/common/helpers/utils';
-import { Request } from 'express';
-import { REQUEST } from '@nestjs/core';
+import { PaymentType } from '@prisma/client';
 import { AssignResourceDto } from './dto/assign-resource.dto';
 import { ReservationsService } from '@/reservations/reservations.service';
 import { RoomService } from '@/room/room.service';
+import { ContextService } from '@/common/context/context.service';
+import { PermissionsService } from '@/permission/permissions.service';
 
 @Injectable()
-export class ResourcesService implements ICrudService<Resource, CreateResourceDto, UpdateResourceDto> {
+export class ResourcesService {
   constructor(
-    @Inject(REQUEST) private request: Request,
     private database: DatabaseService,
+    private context: ContextService,
+    private permissionsService: PermissionsService,
     private reservationService: ReservationsService,
     private roomService: RoomService
   ) {}
 
   async create(createResourceDto: CreateResourceDto) {
-    matchUserBranchWithEntity(this.request.user, createResourceDto.branchId);
+    this.permissionsService.verifyEntityOwnership(createResourceDto.branchId);
     return await this.database.resource.create({
       data: createResourceDto
     });
@@ -40,7 +39,9 @@ export class ResourcesService implements ICrudService<Resource, CreateResourceDt
   async findAll() {
     return await this.database.resource.findMany({
       where: {
-        branchId: this.request.user?.branchId
+        branchId: {
+          in: this.context.getUserBranches()
+        }
       }
     });
   }
@@ -52,7 +53,7 @@ export class ResourcesService implements ICrudService<Resource, CreateResourceDt
       }
     });
     if (!record) throw new BadRequestException(`Resource with id ${id} not found`);
-    matchUserBranchWithEntity(this.request.user, record.branchId);
+    this.permissionsService.verifyEntityOwnership(record.branchId);
     return record;
   }
 

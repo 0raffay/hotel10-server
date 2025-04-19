@@ -1,21 +1,24 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreatePaymentDto } from './dto/create-payment.dto';
 import { UpdatePaymentDto } from './dto/update-payment.dto';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
 import { DatabaseService } from '@/common/database/database.service';
-import { matchUserBranchWithEntity } from '@/common/helpers/utils';
 import { Payment } from '@prisma/client';
+import { ContextService } from '@/common/context/context.service';
+import { PermissionsService } from '@/permission/permissions.service';
 
 @Injectable()
 export class PaymentService {
-  constructor(@Inject(REQUEST) private request: Request, private database: DatabaseService) {}
+  constructor(
+    private database: DatabaseService,
+    private context: ContextService,
+    private permissionsService: PermissionsService
+  ) {}
 
   async create(createPaymentDto: CreatePaymentDto) {
     const { amount, tax, additionalCharges } = createPaymentDto;
     const totalAmount = this.getPaymentTotalAmount(amount, additionalCharges, tax);
     return await this.database.payment.create({
-      data: {...createPaymentDto, totalAmount}
+      data: { ...createPaymentDto, totalAmount }
     });
   }
 
@@ -23,7 +26,9 @@ export class PaymentService {
     return await this.database.payment.findMany({
       where: {
         reservation: {
-          branchId: this.request.user?.branchId
+          branchId: {
+            in: this.context.getUserBranches()
+          }
         }
       }
     });
@@ -37,9 +42,9 @@ export class PaymentService {
       include: {
         reservation: true
       }
-    })
+    });
     if (!payment) throw new NotFoundException(`Payment not found for id ${id}.`);
-    matchUserBranchWithEntity(this.request.user, payment.reservation.branchId);
+    this.permissionsService.verifyEntityOwnership(payment.reservation.branchId);
     return payment;
   }
 
@@ -50,7 +55,7 @@ export class PaymentService {
         id
       },
       data: updatePaymentDto
-    })
+    });
   }
 
   async remove(id: number) {
@@ -63,8 +68,8 @@ export class PaymentService {
   }
 
   getPaymentTotalAmount(amount: number, additionalCharges: number, tax: number): number {
-    let totalAmount = (amount + additionalCharges)
-    totalAmount = totalAmount + (tax * totalAmount);
+    let totalAmount = amount + additionalCharges;
+    totalAmount = totalAmount + tax * totalAmount;
     return totalAmount;
   }
 
@@ -73,7 +78,6 @@ export class PaymentService {
       where: {
         reservationId
       }
-    })
+    });
   }
-
 }

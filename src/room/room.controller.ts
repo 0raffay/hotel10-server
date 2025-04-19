@@ -2,11 +2,9 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Req } from '@nestjs/
 import { RoomService } from './room.service';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
-import { ICrudController } from '@/common/types';
-import { Room } from '@prisma/client';
 
 @Controller('rooms')
-export class RoomController implements ICrudController<Room, CreateRoomDto, UpdateRoomDto> {
+export class RoomController {
   constructor(private readonly roomService: RoomService) {}
 
   @Post()
