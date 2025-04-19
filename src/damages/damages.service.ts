@@ -1,28 +1,30 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateDamageDto } from './dto/create-damage.dto';
 import { UpdateDamageDto } from './dto/update-damage.dto';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
 import { DatabaseService } from '@/common/database/database.service';
 import { ReservationsService } from '@/reservations/reservations.service';
-import { ResourcesService } from '@/resources/resources.service';
 import { PaymentType } from '@prisma/client';
+import { PermissionsService } from '@/permission/permissions.service';
+import { ContextService } from '@/common/context/context.service';
 
 @Injectable()
 export class DamagesService {
   constructor(
-    @Inject(REQUEST) private request: Request,
+    private context: ContextService,
     private database: DatabaseService,
-    private reservationService: ReservationsService,
+    private reservationService: ReservationsService
   ) {}
 
   async create(createDamageDto: CreateDamageDto) {
     const { roomResourceId, reservationResourceId, chargeDetails } = createDamageDto;
     if (roomResourceId && reservationResourceId) throw new BadRequestException('Damage cannot be assigned to both room resource & reservation resource');
     if (reservationResourceId && !roomResourceId) {
-      const reservationResource = await this.database.reservationResource.findFirst({ where: { id: reservationResourceId }, include: {
-        resource: true
-      } });
+      const reservationResource = await this.database.reservationResource.findFirst({
+        where: { id: reservationResourceId },
+        include: {
+          resource: true
+        }
+      });
 
       if (!reservationResource) throw new NotFoundException(`Record not found for provided reservation resource id: ${reservationResourceId}`);
 
@@ -33,7 +35,7 @@ export class DamagesService {
         additionalCharges: chargeDetails.additionalCharges,
         reservationId: reservationResource!.reservationId,
         tax: 0
-      })
+      });
     }
     if (roomResourceId && reservationResourceId) {
       const roomResource = await this.database.roomResource.findFirst({ where: { id: roomResourceId } });
@@ -43,30 +45,35 @@ export class DamagesService {
     return await this.database.damage.create({
       data: {
         damagedQuantity: createDamageDto.damagedQuantity,
-        status:'pending',
+        status: 'pending',
         notes: createDamageDto.notes,
         reservationResourceId,
         roomResourceId,
-        reportedBy: this.request.user!.id
+        reportedBy: this.context.getAuthUser().id
       }
     });
   }
 
   async findAll() {
+    const userBranches = this.context.getUserBranches();
     return await this.database.damage.findMany({
       where: {
         OR: [
           {
             reservationResource: {
               reservation: {
-                branchId: this.request.user?.branchId
+                branchId: {
+                  in: userBranches
+                }
               }
             }
           },
           {
             roomResource: {
               room: {
-                branchId: this.request.user?.branchId
+                branchId: {
+                  in: userBranches
+                }
               }
             }
           }
@@ -76,6 +83,7 @@ export class DamagesService {
   }
 
   async findOne(id: number) {
+    const userBranches = this.context.getUserBranches();
     const damage = await this.database.damage.findFirst({
       where: {
         id: id,
@@ -83,14 +91,18 @@ export class DamagesService {
           {
             reservationResource: {
               reservation: {
-                branchId: this.request.user?.branchId
+                branchId: {
+                  in: userBranches
+                }
               }
             }
           },
           {
             roomResource: {
               room: {
-                branchId: this.request.user?.branchId
+                branchId: {
+                  in: userBranches
+                }
               }
             }
           }

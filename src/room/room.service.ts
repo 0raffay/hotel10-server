@@ -2,22 +2,21 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { DatabaseService } from '@/common/database/database.service';
-import { ICrudService } from '@/common/types';
 import { Room } from '@prisma/client';
-import { matchUserBranchWithEntity } from '@/common/helpers/utils';
-import { REQUEST } from '@nestjs/core';
-import { Request } from 'express';
+import { ContextService } from '@/common/context/context.service';
+import { PermissionsService } from '@/permission/permissions.service';
 @Injectable()
-export class RoomService implements ICrudService<Room, CreateRoomDto, UpdateRoomDto> {
+export class RoomService {
   constructor(
-    @Inject(REQUEST) private request: Request,
-    private database: DatabaseService
+    private database: DatabaseService,
+    private context: ContextService,
+    private permissionsService: PermissionsService
   ) {}
 
   async create(createRoomDto: CreateRoomDto) {
     const existingRoom = await this.findRoomByNumber(createRoomDto.roomNumber, createRoomDto.branchId);
     if (existingRoom) throw new BadRequestException('Room with this number already exists');
-    matchUserBranchWithEntity(this.request.user, createRoomDto.branchId);
+    this.permissionsService.verifyEntityOwnership(createRoomDto.branchId);
     return await this.database.room.create({ data: createRoomDto });
   }
 
@@ -34,7 +33,9 @@ export class RoomService implements ICrudService<Room, CreateRoomDto, UpdateRoom
   async findAll() {
     return await this.database.room.findMany({
       where: {
-        branchId: this.request.user?.branchId
+        branchId: {
+          in: this.context.getUserBranches()
+        }
       }
     });
   }
@@ -46,7 +47,7 @@ export class RoomService implements ICrudService<Room, CreateRoomDto, UpdateRoom
       }
     });
     if (!record) throw new BadRequestException(`Room with id ${id} not found`);
-    matchUserBranchWithEntity(this.request.user, record.branchId);
+    this.permissionsService.verifyEntityOwnership(record.branchId);
     return record;
   }
 

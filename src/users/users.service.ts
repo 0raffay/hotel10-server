@@ -3,21 +3,33 @@ import { DatabaseService } from '@/common/database/database.service';
 import * as bcrypt from 'bcrypt';
 import { Prisma, User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
+import { BranchService } from '@/branch/branch.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private database: DatabaseService) {}
+  constructor(private database: DatabaseService, private branchService: BranchService) {}
 
   async create(createUserDto: CreateUserDto, tx?: Prisma.TransactionClient) {
     const db = tx || this.database;
 
+    const { branchId, role, password, ...createUserPayload } = createUserDto;
+    if (!tx) await this.branchService.findOne(branchId);
     const existingUser = await this.findUserByEmail(createUserDto.email);
     if (existingUser) throw new BadRequestException('User with same email already exists.');
-    const { password } = createUserDto;
+
     const hashedPassword = await bcrypt.hash(password, 10);
-    return await db.user.create({
-      data: { ...createUserDto, password: hashedPassword }
+    const user = await db.user.create({
+      data: { ...createUserPayload, password: hashedPassword }
     });
+
+    await db.userBranch.create({
+      data: {
+        userId: user.id,
+        branchId: branchId,
+        role: role
+      }
+    })
+    return user;
   }
 
   async findAll() {
@@ -28,9 +40,13 @@ export class UsersService {
     const user = await this.database.user.findFirst({
       where: { id },
       include: {
-        branch: {
+        branches: {
           include: {
-            hotel: true
+            branch: {
+              include: {
+                hotel: true
+              }
+            }
           }
         }
       }
@@ -60,9 +76,13 @@ export class UsersService {
         email: email
       },
       include: {
-        branch: {
+        branches: {
           include: {
-            hotel: true
+            branch: {
+              include: {
+                hotel: true
+              }
+            }
           }
         }
       }

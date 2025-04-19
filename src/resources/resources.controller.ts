@@ -2,12 +2,10 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, Req } from '@nestjs/
 import { ResourcesService } from './resources.service';
 import { CreateResourceDto } from './dto/create-resource.dto';
 import { UpdateResourceDto } from './dto/update-resource.dto';
-import { ICrudController } from '@/common/types';
-import { Resource } from '@prisma/client';
 import { AssignResourceDto } from './dto/assign-resource.dto';
 
 @Controller('resources')
-export class ResourcesController implements ICrudController<Resource, CreateResourceDto, UpdateResourceDto> {
+export class ResourcesController {
   constructor(private readonly resourceService: ResourcesService) {}
 
   @Post()
