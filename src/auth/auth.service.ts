@@ -22,11 +22,11 @@ export class AuthService {
   async validateUser(email: string, password: string): Promise<Record<string, unknown>> {
     const user = await this.usersService.findUserByEmail(email);
     if (!user) {
-      throw new BadRequestException('User not found');
+      throw new BadRequestException('User with email is not found');
     }
     const isMatch: boolean = bcrypt.compareSync(password, user.password);
     if (!isMatch) {
-      throw new BadRequestException('Password does not match');
+      throw new BadRequestException('Password is invalid. Please provide correct password');
     }
     return transformUserResponse(user);
   }
@@ -48,7 +48,7 @@ export class AuthService {
   }
 
   async register(registerDto: RegisterDto) {
-    return await this.database.$transaction(async (tx) => {
+    const transaction = await this.database.$transaction(async (tx) => {
       const hotel = await this.hotelService.create(registerDto.hotel, tx);
       const branch = await this.branchService.create({ ...registerDto.branch, hotelId: hotel.id }, tx);
       const user = await this.usersService.create(
@@ -64,8 +64,10 @@ export class AuthService {
       return {
         hotel,
         branch,
-        user: { ...user, password: undefined }
+        user
       };
     });
+    const authUser = this.login(this.validateUser(transaction.user.email, transaction.user.password))
+    return {...transaction, user: authUser}
   }
 }

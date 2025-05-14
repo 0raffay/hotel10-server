@@ -7,15 +7,18 @@ import { BranchService } from '@/branch/branch.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private database: DatabaseService, private branchService: BranchService) {}
+  constructor(
+    private database: DatabaseService,
+    private branchService: BranchService
+  ) {}
 
   async create(createUserDto: CreateUserDto, tx?: Prisma.TransactionClient) {
     const db = tx || this.database;
 
     const { branchId, role, password, ...createUserPayload } = createUserDto;
     if (!tx) await this.branchService.findOne(branchId);
-    const existingUser = await this.findUserByEmail(createUserDto.email);
-    if (existingUser) throw new BadRequestException('User with same email already exists.');
+    const existingUser = await this.checkIfUserExist(createUserDto);
+    if (existingUser) throw new BadRequestException('User with same email or cnic already exists.');
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = await db.user.create({
@@ -28,7 +31,7 @@ export class UsersService {
         branchId: branchId,
         role: role
       }
-    })
+    });
     return user;
   }
 
@@ -52,7 +55,7 @@ export class UsersService {
       }
     });
     if (!user) {
-      throw new NotFoundException(`User with id ${id} not found`)
+      throw new NotFoundException(`User with id ${id} not found`);
     }
     return user;
   }
@@ -85,6 +88,14 @@ export class UsersService {
             }
           }
         }
+      }
+    });
+  }
+
+  async checkIfUserExist(user: CreateUserDto) {
+    return await this.database.user.findFirst({
+      where: {
+        OR: [{ email: user.email }, { cnic: user.cnic }]
       }
     });
   }

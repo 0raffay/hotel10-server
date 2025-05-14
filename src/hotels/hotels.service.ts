@@ -50,7 +50,7 @@ export class HotelsService {
   async findHotelByName(name: string) {
     return await this.database.hotel.findFirst({
       where: {
-        name: name.trim().toLowerCase()
+        name: name
       }
     });
   }
