@@ -1,7 +1,6 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateBranchDto {
-  @IsNumber()
   @IsOptional()
   hotelId: number;
 
@@ -11,15 +10,13 @@ export class CreateBranchDto {
 
   @IsString()
   @IsNotEmpty()
-  location: string;
+  address: string;
 
   @IsEmail()
+  @IsOptional()
   email: string;
 
   @IsString()
-  phone: string;
-
   @IsOptional()
-  @IsString()
-  whatsapp?: string;
+  phone: string;
 }

@@ -9,8 +9,8 @@ export class HotelsService {
 
   async create(createHotelDto: CreateHotelDto, tx?: Prisma.TransactionClient) {
     const db = tx || this.database;
-    const hotelExists = await this.findHotelByEmail(createHotelDto.email);
-    if (hotelExists) throw new BadRequestException('Hotel with same email already exists.');
+    const hotelExists = await this.findHotelByName(createHotelDto.name);
+    if (hotelExists) throw new BadRequestException('Hotel with same name already exists.');
     return await db.hotel.create({
       data: createHotelDto
     });
@@ -23,7 +23,7 @@ export class HotelsService {
   async findOne(id: number) {
     return await this.database.hotel.findUnique({
       where: { id },
-      include: { branches: true, owners: true }
+      include: { branches: true }
     });
   }
   async update(id: number, updateHotelDto: Prisma.HotelUpdateInput) {
@@ -43,6 +43,14 @@ export class HotelsService {
     return await this.database.hotel.findFirst({
       where: {
         email: email.trim().toLowerCase()
+      }
+    });
+  }
+
+  async findHotelByName(name: string) {
+    return await this.database.hotel.findFirst({
+      where: {
+        name: name.trim().toLowerCase()
       }
     });
   }

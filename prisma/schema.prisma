@@ -10,12 +10,15 @@ datasource db {
 model User {
   id       Int    @id @default(autoincrement())
   email    String @unique
+  cnic      String @unique
   password String
 
-  username  String
-  firstName String?
-  lastName  String?
+  name      String
   phone     String?
+
+  address   String?
+
+  isOwner    Boolean @default(false)
 
   branches UserBranch[]
 
@@ -44,15 +47,14 @@ enum UserRole {
 
 model Hotel {
   id           Int          @id @default(autoincrement())
-  name         String
-  email        String       @unique
+  name         String       @unique
+  email        String?       @unique
   website      String?
   socialLinks  Json?
   businessCard String?
   letterHead   String?
-  phone        String
+  phone        String?
   branches     Branch[]
-  owners       HotelOwner[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -62,10 +64,9 @@ model Hotel {
 model Branch {
   id           Int           @id @default(autoincrement())
   name         String
-  location     String
-  email        String
-  phone        String
-  whatsapp     String?
+  address      String
+  email        String?
+  phone        String?
   hotelId      Int
   hotel        Hotel         @relation(fields: [hotelId], references: [id], onDelete: Cascade)
   createdAt    DateTime      @default(now())
@@ -76,23 +77,6 @@ model Branch {
   reservations Reservation[]
 
   @@map("branches")
-}
-
-model HotelOwner {
-  id        Int      @id @default(autoincrement())
-  hotelId   Int
-  name      String
-  cnic      String
-  address   String
-  phone     String
-  email     String
-  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([cnic, hotelId])
-  @@unique([email, hotelId])
-  @@map("hotel_owners")
 }
 
 model Room {

@@ -6,9 +6,11 @@ export class CreateHotelDto {
   name: string;
 
   @IsEmail()
+  @IsOptional()
   email: string;
 
   @IsString()
+  @IsOptional()
   phone: string;
 
   @IsOptional()

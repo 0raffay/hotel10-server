@@ -4,7 +4,6 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { RegisterDto } from './dto/register.dto';
 import { HotelsService } from '@/hotels/hotels.service';
-import { OwnerService } from '@/owner/owner.service';
 import { BranchService } from '@/branch/branch.service';
 import { DatabaseService } from '@/common/database/database.service';
 import { transformUserResponse } from '@/common/helpers/utils';
@@ -17,7 +16,6 @@ export class AuthService {
     private database: DatabaseService,
     private usersService: UsersService,
     private hotelService: HotelsService,
-    private ownerService: OwnerService,
     private branchService: BranchService
   ) {}
 
@@ -43,39 +41,28 @@ export class AuthService {
           return {
             id: userBranch.branch.id,
             role: userBranch.role
-          }
-        })})
+          };
+        })
+      })
     };
   }
 
   async register(registerDto: RegisterDto) {
     return await this.database.$transaction(async (tx) => {
       const hotel = await this.hotelService.create(registerDto.hotel, tx);
-      const owners = await this.ownerService.create(
-        registerDto.owners.map((owner) => ({
-          ...owner,
-          hotelId: hotel.id
-        })),
-        tx
-      );
-      const branch = await this.branchService.create({ ...registerDto.branch, hotelId: hotel.id, email: hotel.email }, tx);
+      const branch = await this.branchService.create({ ...registerDto.branch, hotelId: hotel.id }, tx);
       const user = await this.usersService.create(
         {
           ...registerDto.user,
-          username: `Super Admin`,
-          firstName: "Super",
-          lastName: "Admin",
           branchId: branch.id,
-          email: hotel.email,
-          phone: hotel.phone,
-          role: UserRole.admin
+          role: UserRole.admin,
+          isOwner: true
         },
         tx
       );
 
       return {
         hotel,
-        owners,
         branch,
         user: { ...user, password: undefined }
       };
