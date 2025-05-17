@@ -55,6 +55,7 @@ model Hotel {
   letterHead   String?
   phone        String?
   branches     Branch[]
+  roomTypes    RoomType[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
@@ -80,26 +81,35 @@ model Branch {
 }
 
 model Room {
-  id         Int    @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   roomNumber String
   branchId   Int
-  branch     Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
-  roomType String
-  bedType  String
-  capacity Int
-  price    Int
-  status   RoomStatus
+  roomTypeId Int
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id])
 
-  description String?
-  photos      RoomPhotos[]
+  bedType    String
+  capacity   Int
+  status     RoomStatus
 
-  roomResources RoomResource[]
-
-  reservations Reservation[]
+  description    String?
+  photos         RoomPhotos[]
+  roomResources  RoomResource[]
+  reservations   Reservation[]
 
   @@unique([roomNumber, branchId])
   @@map("rooms")
+}
+model RoomType {
+  id    Int     @id @default(autoincrement())
+  name  String
+  hotelId Int
+  hotel   Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  price Int
+  rooms Room[]
+
+  @@unique([name, hotelId])
 }
 
 enum RoomStatus {

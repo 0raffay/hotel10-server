@@ -44,6 +44,9 @@ export class RoomService {
     const record = await this.database.room.findFirst({
       where: {
         id: id
+      },
+      include: {
+        roomType: true
       }
     });
     if (!record) throw new BadRequestException(`Room with id ${id} not found`);

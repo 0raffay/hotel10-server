@@ -124,7 +124,7 @@ export class ReservationsService {
   }
 
   async createReservationRoomPayment(reservation: Reservation) {
-    const roomPrice = (await this.roomService.findOne(reservation.roomId)).price;
+    const roomPrice = (await this.roomService.findOne(reservation.roomId)).roomType.price;
     return await this.createReservationPayment({
       reservationId: reservation.id,
       type: PaymentType.room_charges,
