@@ -67,7 +67,8 @@ export class AuthService {
         user
       };
     });
-    const authUser = this.login(this.validateUser(transaction.user.email, transaction.user.password))
+    const dbUser = await this.validateUser(transaction.user.email, registerDto.user.password);
+    const authUser = await this.login(dbUser)
     return {...transaction, user: authUser}
   }
 }
