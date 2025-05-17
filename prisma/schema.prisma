@@ -76,6 +76,7 @@ model Branch {
   rooms        Room[]
   resources    Resource[]
   reservations Reservation[]
+  floors       RoomFloor[]
 
   @@map("branches")
 }
@@ -88,6 +89,9 @@ model Room {
 
   roomTypeId Int
   roomType   RoomType @relation(fields: [roomTypeId], references: [id])
+
+  floorId Int
+  floor   RoomFloor @relation(fields: [floorId], references: [id])
 
   bedType    String
   capacity   Int
@@ -110,6 +114,16 @@ model RoomType {
   rooms Room[]
 
   @@unique([name, hotelId])
+}
+
+model RoomFloor {
+  id Int @id @default(autoincrement())
+  branchId Int
+  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  name String
+  rooms Room[]
+
+  @@unique([name, branchId])
 }
 
 enum RoomStatus {

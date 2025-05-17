@@ -5,6 +5,10 @@ export class CreateRoomDto {
   @IsNotEmpty()
   branchId: number;
 
+  @IsNumber()
+  @IsNotEmpty()
+  floorId: number;
+
   @IsString()
   @IsNotEmpty()
   roomNumber: string;

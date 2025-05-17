@@ -16,9 +16,10 @@ import { PaymentModule } from './payment/payment.module';
 import { PermissionsModule } from './permission/permissions.module';
 import { ContextModule } from './common/context/context.module';
 import { RoomTypeModule } from './room-type/room-type.module';
+import { RoomFloorModule } from './room-floor/room-floor.module';
 
 @Module({
-  imports: [DatabaseModule, PermissionsModule, ContextModule, UsersModule, HotelsModule, AuthModule, BranchModule, RoomModule, ResourcesModule, ReservationsModule, GuestsModule, DamagesModule, PaymentModule, RoomTypeModule],
+  imports: [DatabaseModule, PermissionsModule, ContextModule, UsersModule, HotelsModule, AuthModule, BranchModule, RoomModule, ResourcesModule, ReservationsModule, GuestsModule, DamagesModule, PaymentModule, RoomTypeModule, RoomFloorModule],
   controllers: [],
   providers: [
     {
