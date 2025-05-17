@@ -1,5 +1,4 @@
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
-import { RoomStatus } from '@prisma/client';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateRoomDto {
   @IsNumber()
@@ -21,10 +20,6 @@ export class CreateRoomDto {
   @IsNumber()
   @IsNotEmpty()
   capacity: number;
-
-  @IsEnum(RoomStatus)
-  @IsNotEmpty()
-  status: RoomStatus;
 
   @IsString()
   @IsOptional()

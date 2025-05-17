@@ -2,9 +2,10 @@ import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { DatabaseService } from '@/common/database/database.service';
-import { Room } from '@prisma/client';
+import { Room, RoomStatus } from '@prisma/client';
 import { ContextService } from '@/common/context/context.service';
 import { PermissionsService } from '@/permission/permissions.service';
+
 @Injectable()
 export class RoomService {
   constructor(
@@ -17,7 +18,12 @@ export class RoomService {
     const existingRoom = await this.findRoomByNumber(createRoomDto.roomNumber, createRoomDto.branchId);
     if (existingRoom) throw new BadRequestException('Room with this number already exists');
     this.permissionsService.verifyEntityOwnership(createRoomDto.branchId);
-    return await this.database.room.create({ data: createRoomDto });
+
+    const payload = {
+      ...createRoomDto,
+      status: RoomStatus.available
+    }
+    return await this.database.room.create({ data: payload });
   }
 
   async update(id: number, updateRoomDto: UpdateRoomDto) {
