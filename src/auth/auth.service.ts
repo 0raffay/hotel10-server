@@ -8,6 +8,7 @@ import { BranchService } from '@/branch/branch.service';
 import { DatabaseService } from '@/common/database/database.service';
 import { transformUserResponse } from '@/common/helpers/utils';
 import { UserRole } from '@prisma/client';
+import { IAuthUser } from '@/common/types';
 
 @Injectable()
 export class AuthService {
@@ -37,13 +38,14 @@ export class AuthService {
       ...payload,
       accessToken: this.jwtService.sign({
         id: payload.id,
+        hotelId: payload.branches[0].branch.hotelId,
         branches: payload.branches.map((userBranch: any) => {
           return {
             id: userBranch.branch.id,
             role: userBranch.role
           };
         })
-      })
+      } as IAuthUser)
     };
   }
 

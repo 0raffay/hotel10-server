@@ -38,6 +38,13 @@ export class RoomService {
 
   async findAll() {
     return await this.database.room.findMany({
+      include: {
+        branch: true,
+        floor: true,
+        reservations: true,
+        roomResources: true,
+        roomType: true
+      },
       where: {
         branchId: {
           in: this.context.getUserBranches()
@@ -52,8 +59,12 @@ export class RoomService {
         id: id
       },
       include: {
+        branch: true,
+        floor: true,
+        reservations: true,
+        roomResources: true,
         roomType: true
-      }
+      },
     });
     if (!record) throw new BadRequestException(`Room with id ${id} not found`);
     this.permissionsService.verifyEntityOwnership(record.branchId);

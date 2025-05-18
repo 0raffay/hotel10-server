@@ -2,10 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '@/common/database/database.service';
 import { CreateRoomTypeDto } from './dto/create-room-type.dto';
 import { UpdateRoomTypeDto } from './dto/update-room-type.dto';
+import { ContextService } from '@/common/context/context.service';
 
 @Injectable()
 export class RoomTypeService {
-  constructor(private readonly database: DatabaseService) {}
+  constructor(private readonly database: DatabaseService, private readonly context: ContextService) {}
 
   async create(createRoomTypeDto: CreateRoomTypeDto) {
     return this.database.roomType.create({
@@ -14,7 +15,13 @@ export class RoomTypeService {
   }
 
   async findAll() {
-    return this.database.roomType.findMany();
+    const id = this.context.getAuthUser();
+    const data = await this.database.roomType.findMany({
+      where: {
+        hotelId: id.hotelId
+      }
+    })
+    return data;
   }
 
   async findOne(id: number) {
