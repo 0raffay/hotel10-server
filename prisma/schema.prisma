@@ -235,6 +235,8 @@ model Guest {
   dateOfBirth  DateTime?
   address      String?
   nationality  String?
+  ntn          String?       @unique
+  company      String?
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   reservations Reservation[]
@@ -247,6 +249,7 @@ model Reservation {
   guestId     Int
   guest       Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
   totalGuests Int
+  totalChildren Int @default(0)
 
   roomId Int
   room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
@@ -258,6 +261,10 @@ model Reservation {
   checkOutDate DateTime
 
   stayDuration Float?
+
+  notes String?
+
+  purpose String?
 
   status              ReservationStatus
   ReservationResource ReservationResource[]

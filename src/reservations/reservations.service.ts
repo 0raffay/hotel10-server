@@ -8,7 +8,7 @@ import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { PaymentService } from '@/payment/payment.service';
 import { CreatePaymentDto } from '@/payment/dto/create-payment.dto';
-import { PaymentType, Reservation } from '@prisma/client';
+import { PaymentStatus, PaymentType, Reservation } from '@prisma/client';
 import { BranchService } from '@/branch/branch.service';
 import { ContextService } from '@/common/context/context.service';
 import { PermissionsService } from '@/permission/permissions.service';
@@ -31,7 +31,7 @@ export class ReservationsService {
 
     const guestId = createReservationDto.guestId ? createReservationDto.guestId : (await this.guestService.create(createReservationDto.guest)).id;
     const reservation = await this.database.reservation.create({
-      data: { ...createReservationDto, guestId, paymentStatus: 'unpaid', status: createReservationDto.status || 'confirmed', guest: undefined }
+      data: { ...createReservationDto, guestId, paymentStatus: PaymentStatus.unpaid, status: createReservationDto.status || 'confirmed', guest: undefined }
     });
 
     await this.createReservationRoomPayment(reservation);

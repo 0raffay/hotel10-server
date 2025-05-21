@@ -1,7 +1,7 @@
 import { CreateGuestDto } from "@/guests/dto/create-guest.dto";
 import { ReservationStatus } from "@prisma/client";
 import { Transform, Type } from "class-transformer";
-import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, MinDate, ValidateIf, ValidateNested } from "class-validator";
+import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, MinDate, ValidateIf, ValidateNested } from "class-validator";
 
 export class CreateReservationDto {
   @ValidateIf((o) => !o.guest)
@@ -25,6 +25,10 @@ export class CreateReservationDto {
   @IsNumber()
   totalGuests: number;
 
+  @IsNumber()
+  @IsOptional()
+  totalChildren: number;
+
   @IsNotEmpty()
   @Transform(({ value }) => new Date(value))
   @IsDate({ message: 'checkInDate must be a valid date' })
@@ -40,4 +44,12 @@ export class CreateReservationDto {
   @IsEnum(ReservationStatus)
   @IsOptional()
   status: ReservationStatus
+
+  @IsString()
+  @IsOptional()
+  notes: string;
+
+  @IsString()
+  @IsOptional()
+  purpose: string;
 }

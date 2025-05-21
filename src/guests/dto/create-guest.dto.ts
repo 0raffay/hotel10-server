@@ -36,5 +36,13 @@ export class CreateGuestDto {
 
   @IsString()
   @IsOptional()
+  ntn: string;
+
+  @IsString()
+  @IsOptional()
+  company: string;
+
+  @IsString()
+  @IsOptional()
   nationality: string;
 }
