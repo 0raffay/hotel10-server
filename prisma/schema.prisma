@@ -179,7 +179,7 @@ model RoomResource {
 
   quantity Int
 
-  Damages Damage[]
+  damages Damage[]
 
   @@map("room_resources")
 }
@@ -194,7 +194,7 @@ model ReservationResource {
 
   quantity Int
 
-  Damages Damage[]
+  damages Damage[]
 
   @@map("reservation_resources")
 }
