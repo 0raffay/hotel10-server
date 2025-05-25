@@ -51,6 +51,18 @@ export class ReservationsService {
 
   async findAll() {
     return await this.database.reservation.findMany({
+      include: {
+        ReservationResource: true,
+        branch: true,
+        payments: true,
+        room: {
+          include: {
+            roomType: true,
+            floor: true,
+          }
+        },
+        guest: true
+      },
       where: {
         branchId: {
           in: this.context.getUserBranches()
@@ -128,7 +140,7 @@ export class ReservationsService {
     return await this.createReservationPayment({
       reservationId: reservation.id,
       type: PaymentType.room_charges,
-      description: `Room charges - ${roomPrice.toLocaleString()}`,
+      description: `Room charges`,
       amount: roomPrice,
       additionalCharges: 0,
       tax: 0
