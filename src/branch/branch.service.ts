@@ -1,6 +1,7 @@
 import { DatabaseService } from '@/common/database/database.service';
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { CreateBranchDto } from './dto/create-branch.dto';
+import { UpdateBranchDto } from './dto/update-branch.dto';
 import { Branch, Prisma } from '@prisma/client';
 
 @Injectable()
@@ -18,14 +19,40 @@ export class BranchService {
     });
   }
 
+  async findAll(hotelId: string): Promise<Branch[]> {
+    if (!hotelId) throw new BadRequestException("Please provide a hotelId to get all branches")
+    return this.database.branch.findMany({
+      where: {
+        hotelId: +hotelId
+      }
+    });
+  }
+
   async findOne(id: number): Promise<Branch | null> {
     const branch = await this.database.branch.findFirst({
-      where: {
-        id: id
-      }
+      where: { id }
     });
     if (!branch) throw new NotFoundException(`Branch with id ${id} not found`);
     return branch;
+  }
+
+  async update(id: number, updateBranchDto: UpdateBranchDto): Promise<Branch> {
+    const existing = await this.findOne(id);
+    if (!existing) throw new NotFoundException(`Branch with id ${id} not found`);
+
+    return this.database.branch.update({
+      where: { id },
+      data: updateBranchDto
+    });
+  }
+
+  async remove(id: number): Promise<Branch> {
+    const existing = await this.findOne(id);
+    if (!existing) throw new NotFoundException(`Branch with id ${id} not found`);
+
+    return this.database.branch.delete({
+      where: { id }
+    });
   }
 
   async checkIfBranchExists(email: string, hotelId: number) {

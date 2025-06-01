@@ -35,6 +35,26 @@ export class GuestsService {
       },
       include: {
         reservations: {
+          include: {
+            payments: true,
+            branch: true,
+            room: {
+              include: {
+                roomType: true,
+                floor: true
+              }
+            },
+            reservationResource: {
+              include: {
+                resource: true
+              }
+            },
+            guest: {
+              include: {
+                reservations: true
+              }
+            }
+          },
           where: {
             branchId: {
               in: this.context.getUserBranches()
