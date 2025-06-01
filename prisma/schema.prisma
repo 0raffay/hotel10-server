@@ -10,15 +10,15 @@ datasource db {
 model User {
   id       Int    @id @default(autoincrement())
   email    String @unique
-  cnic      String @unique
+  cnic     String @unique
   password String
 
-  name      String
-  phone     String?
+  name  String
+  phone String?
 
-  address   String?
+  address String?
 
-  isOwner    Boolean @default(false)
+  isOwner Boolean @default(false)
 
   branches UserBranch[]
 
@@ -29,12 +29,12 @@ model User {
 }
 
 model UserBranch {
-  id        Int       @id @default(autoincrement())
-  userId    Int
-  branchId  Int
-  role      UserRole
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  branch    Branch    @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  branchId Int
+  role     UserRole
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  branch   Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   @@map("user_branches")
 }
@@ -43,12 +43,13 @@ enum UserRole {
   admin
   manager
   agent
+  staff
 }
 
 model Hotel {
-  id           Int          @id @default(autoincrement())
-  name         String       @unique
-  email        String?       @unique
+  id           Int        @id @default(autoincrement())
+  name         String     @unique
+  email        String?    @unique
   website      String?
   socialLinks  Json?
   businessCard String?
@@ -56,8 +57,8 @@ model Hotel {
   phone        String?
   branches     Branch[]
   roomTypes    RoomType[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
   @@map("hotels")
 }
@@ -82,10 +83,10 @@ model Branch {
 }
 
 model Room {
-  id         Int      @id @default(autoincrement())
+  id         Int    @id @default(autoincrement())
   roomNumber String
   branchId   Int
-  branch     Branch   @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  branch     Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
 
   roomTypeId Int
   roomType   RoomType @relation(fields: [roomTypeId], references: [id])
@@ -93,43 +94,47 @@ model Room {
   floorId Int
   floor   RoomFloor @relation(fields: [floorId], references: [id])
 
-  bedType    String
-  capacity   Int
-  status     RoomStatus
+  bedType  String
+  capacity Int
+  status   RoomStatus
 
-  description    String?
-  photos         RoomPhotos[]
-  roomResources  RoomResource[]
-  reservations   Reservation[]
+  description   String?
+  photos        RoomPhotos[]
+  roomResources RoomResource[]
+  reservations  Reservation[]
+
+  roomHistory RoomHistory[]
 
   @@unique([roomNumber, branchId])
   @@map("rooms")
 }
+
 model RoomType {
-  id    Int     @id @default(autoincrement())
-  name  String
+  id      Int    @id @default(autoincrement())
+  name    String
   hotelId Int
-  hotel   Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
-  price Int
-  rooms Room[]
+  hotel   Hotel  @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  price   Int
+  rooms   Room[]
 
   @@unique([name, hotelId])
 }
 
 model RoomFloor {
-  id Int @id @default(autoincrement())
+  id       Int    @id @default(autoincrement())
   branchId Int
-  branch Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
-  name String
-  rooms Room[]
+  branch   Branch @relation(fields: [branchId], references: [id], onDelete: Cascade)
+  name     String
+  rooms    Room[]
 
   @@unique([name, branchId])
 }
 
 enum RoomStatus {
   available
-  booked
+  reserved
   under_maintainance
+  maintenance_required
 }
 
 model RoomPhotos {
@@ -245,11 +250,13 @@ model Guest {
 }
 
 model Reservation {
-  id          Int   @id @default(autoincrement())
-  guestId     Int
-  guest       Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
-  totalGuests Int
-  totalChildren Int @default(0)
+  id            Int   @id @default(autoincrement())
+  guestId       Int
+  guest         Guest @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  totalGuests   Int
+  totalChildren Int   @default(0)
+
+  reservationNumber String @unique()
 
   roomId Int
   room   Room @relation(fields: [roomId], references: [id], onDelete: Cascade)
@@ -260,22 +267,30 @@ model Reservation {
   checkInDate  DateTime
   checkOutDate DateTime
 
-  stayDuration Float?
-
   notes String?
 
   purpose String?
 
+  reference String?
+
+  paymentMethod String?
+
+  advancePaymentAmount Float @default(0)
+
+
   status              ReservationStatus
-  ReservationResource ReservationResource[]
+  reservationResource ReservationResource[]
 
   paymentStatus PaymentStatus
 
   payments Payment[]
 
+  roomHistory RoomHistory[]
+
   totalAmount Float @default(0.0)
   paidAmount  Float @default(0.0)
   balance     Float @default(0.0)
+  discount Float @default(0.0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -284,9 +299,8 @@ model Reservation {
 }
 
 enum ReservationStatus {
-  pending
-  confirmed
   cancelled
+  confirmed
   checked_in
   checked_out
 }
@@ -304,6 +318,9 @@ model Payment {
   tax               Float
   additionalCharges Float
   totalAmount       Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum PaymentType {
@@ -316,4 +333,21 @@ enum PaymentType {
 enum PaymentStatus {
   unpaid
   paid
+}
+
+model RoomHistory {
+  id             Int          @id @default(autoincrement())
+  reservationId  Int
+  reservation    Reservation  @relation(fields: [reservationId], references: [id], onDelete: Cascade)
+
+  roomId         Int
+  room           Room         @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  fromDate       DateTime
+  toDate         DateTime?
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@map("room_histories")
 }

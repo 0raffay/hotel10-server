@@ -2,6 +2,7 @@ import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/commo
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
+import { ReservationCheckoutDto } from './dto/reservation-checkout.dto';
 
 @Controller('reservations')
 export class ReservationsController {
@@ -30,5 +31,10 @@ export class ReservationsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.reservationsService.remove(+id);
+  }
+
+  @Post("reservation-checkout")
+  reservationCheckout(@Body() dto: ReservationCheckoutDto) {
+    return this.reservationsService.reservationCheckout(dto);
   }
 }

@@ -1,20 +1,39 @@
-import { CreateGuestDto } from "@/guests/dto/create-guest.dto";
-import { ReservationStatus } from "@prisma/client";
-import { Transform, Type } from "class-transformer";
-import { IsDate, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString, MinDate, ValidateIf, ValidateNested } from "class-validator";
+import { ReservationStatus } from '@prisma/client';
+import { Transform } from 'class-transformer';
+import {
+  IsDate,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Min,
+  Validate,
+  ValidationArguments,
+  ValidatorConstraint,
+  ValidatorConstraintInterface
+} from 'class-validator';
+
+// Custom class-level validator to check if checkOutDate > checkInDate
+@ValidatorConstraint({ name: 'isCheckOutAfterCheckIn', async: false })
+class IsCheckOutAfterCheckInConstraint implements ValidatorConstraintInterface {
+  validate(checkOutDate: any, args: ValidationArguments) {
+    const object = args.object as any;
+    const checkInDate = object.checkInDate;
+
+    if (!checkInDate || !checkOutDate) return true; // Let @IsNotEmpty and @IsDate handle empty/invalid dates
+    return new Date(checkOutDate) > new Date(checkInDate);
+  }
+
+  defaultMessage(args: ValidationArguments) {
+    return `checkOutDate must be after checkInDate`;
+  }
+}
 
 export class CreateReservationDto {
-  @ValidateIf((o) => !o.guest)
-  @IsNotEmpty({ message: "Guest ID is required if no guest object is provided" })
+  @IsNotEmpty({ message: 'Guest ID is required' })
   @IsNumber()
   guestId: number;
-
-  @ValidateIf((o) => !o.guestId)
-  @IsNotEmpty({ message: "Guest object is required if no guestId is provided" })
-  @ValidateNested()
-  @IsObject()
-  @Type(() => CreateGuestDto)
-  guest: CreateGuestDto;
 
   @IsNumber()
   branchId: number;
@@ -28,7 +47,6 @@ export class CreateReservationDto {
   @IsNumber()
   @IsOptional()
   totalChildren: number;
-
   @IsNotEmpty()
   @Transform(({ value }) => new Date(value))
   @IsDate({ message: 'checkInDate must be a valid date' })
@@ -37,13 +55,12 @@ export class CreateReservationDto {
   @IsNotEmpty()
   @Transform(({ value }) => new Date(value))
   @IsDate({ message: 'checkOutDate must be a valid date' })
-  @MinDate(new Date(), { message: 'checkOutDate must be in the future' })
-  @IsOptional()
+  @Validate(IsCheckOutAfterCheckInConstraint)
   checkOutDate: Date;
 
   @IsEnum(ReservationStatus)
   @IsOptional()
-  status: ReservationStatus
+  status: ReservationStatus;
 
   @IsString()
   @IsOptional()
@@ -52,4 +69,12 @@ export class CreateReservationDto {
   @IsString()
   @IsOptional()
   purpose: string;
+
+  @IsString()
+  @IsOptional()
+  reference: string;
+
+  @IsNumber()
+  @Min(0)
+  advancePaymentAmount: number;
 }
