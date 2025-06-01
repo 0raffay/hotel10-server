@@ -1,64 +1,99 @@
 import { DatabaseService } from '@/common/database/database.service';
-import { matchUserBranchWithEntity } from '@/common/helpers/utils';
-import { GuestsService } from '@/guests/guests.service';
 import { RoomService } from '@/room/room.service';
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { differenceInMilliseconds, isBefore, millisecondsToHours } from 'date-fns';
+import { differenceInDays, differenceInMilliseconds, isAfter, isBefore, isEqual, millisecondsToHours } from 'date-fns';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
 import { PaymentService } from '@/payment/payment.service';
 import { CreatePaymentDto } from '@/payment/dto/create-payment.dto';
-import { PaymentStatus, PaymentType, Reservation } from '@prisma/client';
+import { PaymentStatus, PaymentType, Reservation, ReservationStatus, RoomStatus } from '@prisma/client';
 import { BranchService } from '@/branch/branch.service';
 import { ContextService } from '@/common/context/context.service';
 import { PermissionsService } from '@/permission/permissions.service';
+import { generateReservationNumber } from '@/common/helpers/utils';
+import { RoomHistoryService } from '@/room-history/room-history.service';
+import { ReservationFinanceService } from './reservation-finance.service';
+import { ReservationCheckoutDto } from './dto/reservation-checkout.dto';
 
 @Injectable()
 export class ReservationsService {
   constructor(
     private database: DatabaseService,
     private context: ContextService,
-    private permissionsService: PermissionsService,
     private roomService: RoomService,
-    private guestService: GuestsService,
-    private paymentService: PaymentService,
-    private branchService: BranchService
+    private branchService: BranchService,
+    private reservationPaymentService: ReservationFinanceService,
+    private historyService: RoomHistoryService,
+    private permissionsService: PermissionsService
   ) {}
 
-  async create(createReservationDto: CreateReservationDto) {
-    await this.branchService.findOne(createReservationDto.branchId);
-    await this.roomService.findOne(createReservationDto.roomId);
+  async create(dto: CreateReservationDto) {
+    await this.branchService.findOne(dto.branchId);
 
-    const guestId = createReservationDto.guestId ? createReservationDto.guestId : (await this.guestService.create(createReservationDto.guest)).id;
+    const room = await this.roomService.findOne(dto.roomId);
+    if (room.status !== RoomStatus.available) throw new BadRequestException('Room is not available');
+
+    const reservationStatus = this.getInitialStatus(dto.checkInDate);
+    const reservationNumber = await generateReservationNumber(this.database);
+
     const reservation = await this.database.reservation.create({
-      data: { ...createReservationDto, guestId, paymentStatus: PaymentStatus.unpaid, status: createReservationDto.status || 'confirmed', guest: undefined }
+      data: {
+        ...dto,
+        reservationNumber,
+        paymentStatus: PaymentStatus.unpaid,
+        status: reservationStatus
+      }
     });
 
-    await this.createReservationRoomPayment(reservation);
+    // Create advanced payment
+    await this.createReservationPayment({
+      amount: dto.advancePaymentAmount,
+      reservationId: reservation.id,
+      type: PaymentType.guest_payment,
+      description: 'Advance payment',
+      tax: 0,
+      additionalCharges: 0
+    });
+
+    // update reservations status
+    await this.onUpdateReservationStatus(dto.roomId, reservationStatus);
+    // Create reservation room payment
+    await this.reservationPaymentService.createReservationRoomPayment(reservation);
+    // Create room history
+    await this.historyService.updateRoomHistory(reservation.id, room.id);
 
     return reservation;
   }
 
-  async update(id: number, updateReservationDto: UpdateReservationDto) {
-    await this.findOne(id);
+  async update(id: number, dto: UpdateReservationDto) {
+    const reservation = await this.findOne(id);
+
+    if (dto.status && dto.status !== reservation.status) {
+      await this.onUpdateReservationStatus(reservation.roomId, dto.status);
+    }
+
+    if (dto.roomId && dto.roomId !== reservation.roomId) {
+      await this.roomService.update(reservation.roomId, { status: RoomStatus.available });
+      await this.roomService.update(dto.roomId, { status: RoomStatus.reserved });
+      await this.historyService.updateRoomHistory(id, dto.roomId);
+    }
+
     return await this.database.reservation.update({
-      where: {
-        id
-      },
-      data: updateReservationDto
+      where: { id },
+      data: dto
     });
   }
 
   async findAll() {
     return await this.database.reservation.findMany({
       include: {
-        ReservationResource: true,
+        reservationResource: true,
         branch: true,
         payments: true,
         room: {
           include: {
             roomType: true,
-            floor: true,
+            floor: true
           }
         },
         guest: true
@@ -72,22 +107,36 @@ export class ReservationsService {
   }
 
   async findOne(id: number) {
-    const record = await this.getById(id);
+    const record = await this.database.reservation.findFirst({
+      where: {
+        id
+      },
+      include: {
+        roomHistory: {
+          include: {
+            room: true
+          }
+        },
+        reservationResource: true,
+        branch: true,
+        payments: true,
+        room: {
+          include: {
+            roomType: true,
+            floor: true
+          }
+        },
+        guest: true
+      }
+    });
     if (!record) throw new BadRequestException(`Reservation with id ${id} not found`);
-    this.permissionsService.verifyEntityOwnership(record.branchId)
+    this.permissionsService.verifyEntityOwnership(record.branchId);
     return record;
   }
 
-  async getById(id: number): Promise<Reservation | null> {
-    return await this.database.reservation.findFirst({
-      where: {
-        id
-      }
-    })
-  }
-
   async remove(id: number) {
-    await this.findOne(id);
+    const reservation = await this.findOne(id);
+    await this.roomService.update(reservation.roomId, { status: RoomStatus.available });
     return await this.database.reservation.delete({
       where: {
         id
@@ -95,55 +144,61 @@ export class ReservationsService {
     });
   }
 
-  getReservationDuration(checkInDate: Date, checkOutDate: Date): number {
-    return millisecondsToHours(differenceInMilliseconds(checkOutDate, checkInDate)) / 24;
+  private getInitialStatus(checkInDate: Date): ReservationStatus {
+    return isAfter(checkInDate, new Date()) || isEqual(checkInDate, new Date())
+      ? ReservationStatus.checked_in
+      : ReservationStatus.confirmed;
   }
 
-  async updateReservationFinance(reservationId: number) {
-    const payments = await this.paymentService.getAllReservationPayments(reservationId);
+  private async onUpdateReservationStatus(roomId: number, status: ReservationStatus) {
+    if (status === ReservationStatus.cancelled) {
+      await this.roomService.update(roomId, { status: RoomStatus.available });
+    }
 
-    const totalAmount = payments.reduce((total, payment) => {
-      if (payment.type !== PaymentType.guest_payment) {
-        total += payment.totalAmount;
-      }
-      return total;
-    }, 0)
+    if (status === ReservationStatus.checked_in || status === ReservationStatus.confirmed) {
+      await this.roomService.update(roomId, { status: RoomStatus.reserved });
+    }
 
-    const paidAmount = payments.reduce((totalPaid, payment) => {
-      if (payment.type === PaymentType.guest_payment) {
-        totalPaid += payment.totalAmount;
-      }
-      return totalPaid;
-    }, 0)
-
-    const balance = totalAmount - paidAmount;
-
-    return await this.database.reservation.update({
-      where: {
-        id: reservationId
-      },
-      data: {
-        totalAmount,
-        balance,
-        paidAmount
-      }
-    })
+    if (status === ReservationStatus.checked_out) {
+      await this.roomService.update(roomId, { status: RoomStatus.maintenance_required });
+    }
   }
 
   async createReservationPayment(paymentData: CreatePaymentDto) {
-    await this.paymentService.create(paymentData);
-    return await this.updateReservationFinance(paymentData.reservationId);
+    return await this.reservationPaymentService.createReservationPayment(paymentData);
   }
 
-  async createReservationRoomPayment(reservation: Reservation) {
-    const roomPrice = (await this.roomService.findOne(reservation.roomId)).roomType.price;
-    return await this.createReservationPayment({
-      reservationId: reservation.id,
-      type: PaymentType.room_charges,
-      description: `Room charges`,
-      amount: roomPrice,
+  async reservationCheckout(dto: ReservationCheckoutDto) {
+    const reservation = await this.findOne(dto.reservationId);
+
+    await this.onUpdateReservationStatus(reservation.roomId, ReservationStatus.checked_out);
+
+    await this.createReservationPayment({
+      reservationId: dto.reservationId,
+      type: PaymentType.guest_payment,
+      amount: dto.amount,
       additionalCharges: 0,
-      tax: 0
+      tax: 0,
+      description: dto.description,
+    })
+
+    await this.reservationPaymentService.updateReservationFinance(dto.reservationId)
+
+
+    await this.historyService.updateRoomHistory(reservation.id, reservation.roomId, true);
+
+    return await this.database.reservation.update({
+      where: {
+        id: dto.reservationId
+      },
+      data: {
+        status: ReservationStatus.checked_out,
+        checkOutDate: new Date(),
+        discount: reservation.balance - dto.amount,
+        paymentMethod: dto.paymentMethod,
+        paymentStatus: PaymentStatus.paid,
+        balance: 0
+      }
     });
   }
 }
