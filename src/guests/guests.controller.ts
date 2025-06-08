@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { GuestsService } from './guests.service';
 import { CreateGuestDto } from './dto/create-guest.dto';
 import { UpdateGuestDto } from './dto/update-guest.dto';
@@ -13,8 +13,8 @@ export class GuestsController {
   }
 
   @Get()
-  findAll() {
-    return this.guestsService.findAll();
+  findAll(@Query('branchId') branchId?: string) {
+    return this.guestsService.findAll({ branchId: branchId ? Number(branchId) : undefined });
   }
 
   @Get(':id')

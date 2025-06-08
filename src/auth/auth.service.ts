@@ -56,8 +56,12 @@ export class AuthService {
       const user = await this.usersService.create(
         {
           ...registerDto.user,
-          branchId: branch.id,
-          role: UserRole.admin,
+          branches: [
+            {
+              branchId: branch.id,
+              role: UserRole.admin
+            }
+          ],
           isOwner: true
         },
         tx

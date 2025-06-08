@@ -14,13 +14,14 @@ export class GuestsService {
     });
   }
 
-  async findAll() {
+  async findAll({ branchId }: { branchId?: number } = {}) {
+    const branches = this.context.getUserBranches();
     return await this.database.guest.findMany({
       include: {
         reservations: {
           where: {
             branchId: {
-              in: this.context.getUserBranches()
+              in: branchId ? [branchId] : branches
             }
           }
         }

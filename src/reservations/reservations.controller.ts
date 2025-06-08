@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ReservationsService } from './reservations.service';
 import { CreateReservationDto } from './dto/create-reservation.dto';
 import { UpdateReservationDto } from './dto/update-reservation.dto';
@@ -14,8 +14,10 @@ export class ReservationsController {
   }
 
   @Get()
-  findAll() {
-    return this.reservationsService.findAll();
+  findAll(@Query('branchId') branchId?: string) {
+    return this.reservationsService.findAll({
+      branchId: branchId ? Number(branchId) : undefined
+    });
   }
 
   @Get(':id')
@@ -33,7 +35,7 @@ export class ReservationsController {
     return this.reservationsService.remove(+id);
   }
 
-  @Post("reservation-checkout")
+  @Post('reservation-checkout')
   reservationCheckout(@Body() dto: ReservationCheckoutDto) {
     return this.reservationsService.reservationCheckout(dto);
   }

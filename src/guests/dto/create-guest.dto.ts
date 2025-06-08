@@ -10,7 +10,6 @@ export class CreateGuestDto {
   @IsOptional()
   email: string;
 
-  @IsPhoneNumber()
   @IsOptional()
   phone: string;
 

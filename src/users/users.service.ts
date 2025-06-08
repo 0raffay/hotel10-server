@@ -4,6 +4,8 @@ import * as bcrypt from 'bcrypt';
 import { Prisma, User } from '@prisma/client';
 import { CreateUserDto } from './dto/create-user.dto';
 import { BranchService } from '@/branch/branch.service';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { userInclude } from '@/common/helpers/prisma.queries';
 
 @Injectable()
 export class UsersService {
@@ -15,8 +17,7 @@ export class UsersService {
   async create(createUserDto: CreateUserDto, tx?: Prisma.TransactionClient) {
     const db = tx || this.database;
 
-    const { branchId, role, password, ...createUserPayload } = createUserDto;
-    if (!tx) await this.branchService.findOne(branchId);
+    const { branches, password, ...createUserPayload } = createUserDto;
     const existingUser = await this.checkIfUserExist(createUserDto);
     if (existingUser) throw new BadRequestException('User with same email or cnic already exists.');
 
@@ -25,34 +26,41 @@ export class UsersService {
       data: { ...createUserPayload, password: hashedPassword }
     });
 
-    await db.userBranch.create({
-      data: {
-        userId: user.id,
-        branchId: branchId,
-        role: role
-      }
-    });
+    if (branches && branches.length > 0) {
+      await Promise.all(
+        branches.map(async ({ branchId, role }) => {
+          return db.userBranch.create({
+            data: {
+              userId: user.id,
+              branchId,
+              role
+            }
+          });
+        })
+      );
+    }
+
     return user;
   }
 
   async findAll() {
-    return await this.database.user.findMany();
+    const users = await this.database.user.findMany({
+      omit: {
+        password: true
+      },
+      include: userInclude
+    });
+
+    return users;
   }
 
   async findOne(id: number) {
     const user = await this.database.user.findFirst({
       where: { id },
-      include: {
-        branches: {
-          include: {
-            branch: {
-              include: {
-                hotel: true
-              }
-            }
-          }
-        }
-      }
+      omit: {
+        password: true
+      },
+      include: userInclude
     });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
@@ -60,10 +68,30 @@ export class UsersService {
     return user;
   }
 
-  async update(id: number, updateUserDto: Prisma.UserUpdateInput) {
+  async update(id: number, updateUserDto: UpdateUserDto) {
+    const { branches, ...updateUserPayload } = updateUserDto;
+
+    // Remove old assignments
+    await this.database.userBranch.deleteMany({
+      where: {
+        userId: id
+      }
+    });
+
+    // Re-insert new ones
+    if (branches?.length) {
+      await this.database.userBranch.createMany({
+        data: branches.map((branch) => ({
+          userId: id,
+          branchId: branch.branchId,
+          role: branch.role
+        }))
+      });
+    }
+
     return await this.database.user.update({
       where: { id },
-      data: updateUserDto
+      data: updateUserPayload
     });
   }
 

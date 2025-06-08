@@ -5,6 +5,7 @@ import { DatabaseService } from '@/common/database/database.service';
 import { Room, RoomStatus } from '@prisma/client';
 import { ContextService } from '@/common/context/context.service';
 import { PermissionsService } from '@/permission/permissions.service';
+import { roomInclude } from '@/common/helpers/prisma.queries';
 
 @Injectable()
 export class RoomService {
@@ -36,18 +37,13 @@ export class RoomService {
     });
   }
 
-  async findAll() {
+  async findAll({ branchId }: { branchId?: number } = {}) {
+    const branches = this.context.getUserBranches();
     return await this.database.room.findMany({
-      include: {
-        branch: true,
-        floor: true,
-        reservations: true,
-        roomResources: true,
-        roomType: true
-      },
+      include: roomInclude,
       where: {
         branchId: {
-          in: this.context.getUserBranches()
+          in: branchId ? [branchId] : branches
         }
       }
     });

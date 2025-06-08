@@ -3,6 +3,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { CreateBranchDto } from './dto/create-branch.dto';
 import { UpdateBranchDto } from './dto/update-branch.dto';
 import { Branch, Prisma } from '@prisma/client';
+import { reservationInclude, roomInclude, userInclude } from '@/common/helpers/prisma.queries';
 
 @Injectable()
 export class BranchService {
@@ -22,6 +23,13 @@ export class BranchService {
   async findAll(hotelId: string): Promise<Branch[]> {
     if (!hotelId) throw new BadRequestException("Please provide a hotelId to get all branches")
     return this.database.branch.findMany({
+      include: {
+        staff: true,
+        rooms: true,
+        reservations: true,
+        resources: true,
+        hotel: true
+      },
       where: {
         hotelId: +hotelId
       }
@@ -30,8 +38,24 @@ export class BranchService {
 
   async findOne(id: number): Promise<Branch | null> {
     const branch = await this.database.branch.findFirst({
-      where: { id }
-    });
+      where: { id },
+      include: {
+        reservations: {
+          include: reservationInclude
+        },
+        rooms: {
+          include: roomInclude,
+        },
+        resources: true,
+        staff: {
+          include: {
+            user: {
+              include: userInclude
+            }
+          }
+        },
+    }});
+
     if (!branch) throw new NotFoundException(`Branch with id ${id} not found`);
     return branch;
   }

@@ -1,5 +1,25 @@
+import {
+  IsBoolean,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsNumber,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+  ValidateNested,
+} from 'class-validator';
+import { Type } from 'class-transformer';
 import { UserRole } from '@prisma/client';
-import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, MaxLength, MinLength } from 'class-validator';
+
+class BranchAssignmentDto {
+  @IsNumber()
+  branchId: number;
+
+  @IsEnum(UserRole)
+  role: UserRole;
+}
 
 export class CreateUserDto {
   @IsString()
@@ -22,12 +42,6 @@ export class CreateUserDto {
   @IsOptional()
   phone: string;
 
-  @IsEnum(UserRole)
-  role: UserRole;
-
-  @IsNumber()
-  branchId: number;
-
   @IsBoolean()
   @IsOptional()
   isOwner: boolean;
@@ -35,4 +49,9 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   address: string;
+
+  @ValidateNested({ each: true })
+  @Type(() => BranchAssignmentDto)
+  @IsNotEmpty()
+  branches: BranchAssignmentDto[];
 }

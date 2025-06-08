@@ -14,6 +14,7 @@ import { generateReservationNumber } from '@/common/helpers/utils';
 import { RoomHistoryService } from '@/room-history/room-history.service';
 import { ReservationFinanceService } from './reservation-finance.service';
 import { ReservationCheckoutDto } from './dto/reservation-checkout.dto';
+import { reservationInclude } from '@/common/helpers/prisma.queries';
 
 @Injectable()
 export class ReservationsService {
@@ -36,12 +37,16 @@ export class ReservationsService {
     const reservationStatus = this.getInitialStatus(dto.checkInDate);
     const reservationNumber = await generateReservationNumber(this.database);
 
+    const currentUser = this.context.getAuthUser();
+
     const reservation = await this.database.reservation.create({
       data: {
         ...dto,
         reservationNumber,
         paymentStatus: PaymentStatus.unpaid,
-        status: reservationStatus
+        status: reservationStatus,
+        createdById: currentUser.id,
+        updatedById: currentUser.id
       }
     });
 
@@ -80,28 +85,16 @@ export class ReservationsService {
 
     return await this.database.reservation.update({
       where: { id },
-      data: dto
+      data: { ...dto, updatedById: this.context.getAuthUser().id }
     });
   }
+  async findAll({ branchId }: { branchId?: number } = {}) {
+    const branches = this.context.getUserBranches();
 
-  async findAll() {
     return await this.database.reservation.findMany({
-      include: {
-        reservationResource: true,
-        branch: true,
-        payments: true,
-        room: {
-          include: {
-            roomType: true,
-            floor: true
-          }
-        },
-        guest: true
-      },
+      include: reservationInclude,
       where: {
-        branchId: {
-          in: this.context.getUserBranches()
-        }
+        branchId: branchId ? branchId : { in: branches }
       }
     });
   }
@@ -126,7 +119,9 @@ export class ReservationsService {
             floor: true
           }
         },
-        guest: true
+        guest: true,
+        createdBy: true,
+        updatedBy: true
       }
     });
     if (!record) throw new BadRequestException(`Reservation with id ${id} not found`);
@@ -145,9 +140,7 @@ export class ReservationsService {
   }
 
   private getInitialStatus(checkInDate: Date): ReservationStatus {
-    return isAfter(checkInDate, new Date()) || isEqual(checkInDate, new Date())
-      ? ReservationStatus.checked_in
-      : ReservationStatus.confirmed;
+    return isAfter(checkInDate, new Date()) || isEqual(checkInDate, new Date()) ? ReservationStatus.checked_in : ReservationStatus.confirmed;
   }
 
   private async onUpdateReservationStatus(roomId: number, status: ReservationStatus) {
@@ -179,11 +172,10 @@ export class ReservationsService {
       amount: dto.amount,
       additionalCharges: 0,
       tax: 0,
-      description: dto.description,
-    })
+      description: dto.description
+    });
 
-    await this.reservationPaymentService.updateReservationFinance(dto.reservationId)
-
+    await this.reservationPaymentService.updateReservationFinance(dto.reservationId);
 
     await this.historyService.updateRoomHistory(reservation.id, reservation.roomId, true);
 
