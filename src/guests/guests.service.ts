@@ -3,25 +3,31 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateGuestDto } from './dto/create-guest.dto';
 import { UpdateGuestDto } from './dto/update-guest.dto';
 import { ContextService } from '@/common/context/context.service';
+import { reservationInclude } from '@/common/helpers/prisma.queries';
 
 @Injectable()
 export class GuestsService {
-  constructor(private database: DatabaseService, private context: ContextService) {}
+  constructor(
+    private database: DatabaseService,
+    private context: ContextService
+  ) {}
 
   async create(createGuestDto: CreateGuestDto) {
     return await this.database.guest.create({
       data: createGuestDto
     });
   }
-
   async findAll({ branchId }: { branchId?: number } = {}) {
     const branches = this.context.getUserBranches();
+
+    const branchFilter = branchId ? [branchId] : branches;
+
     return await this.database.guest.findMany({
       include: {
         reservations: {
           where: {
             branchId: {
-              in: branchId ? [branchId] : branches
+              in: branchFilter
             }
           }
         }
@@ -36,34 +42,10 @@ export class GuestsService {
       },
       include: {
         reservations: {
-          include: {
-            payments: true,
-            branch: true,
-            room: {
-              include: {
-                roomType: true,
-                floor: true
-              }
-            },
-            reservationResource: {
-              include: {
-                resource: true
-              }
-            },
-            guest: {
-              include: {
-                reservations: true
-              }
-            }
-          },
-          where: {
-            branchId: {
-              in: this.context.getUserBranches()
-            }
-          }
+          include: reservationInclude
         }
       }
-    })
+    });
     if (!record) throw new NotFoundException(`Guest with id ${id} not found`);
     return record;
   }

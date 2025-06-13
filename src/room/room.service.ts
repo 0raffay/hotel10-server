@@ -5,7 +5,7 @@ import { DatabaseService } from '@/common/database/database.service';
 import { Room, RoomStatus } from '@prisma/client';
 import { ContextService } from '@/common/context/context.service';
 import { PermissionsService } from '@/permission/permissions.service';
-import { roomInclude } from '@/common/helpers/prisma.queries';
+import { reservationInclude, roomInclude } from '@/common/helpers/prisma.queries';
 
 @Injectable()
 export class RoomService {
@@ -23,7 +23,7 @@ export class RoomService {
     const payload = {
       ...createRoomDto,
       status: RoomStatus.available
-    }
+    };
     return await this.database.room.create({ data: payload });
   }
 
@@ -40,7 +40,14 @@ export class RoomService {
   async findAll({ branchId }: { branchId?: number } = {}) {
     const branches = this.context.getUserBranches();
     return await this.database.room.findMany({
-      include: roomInclude,
+      include: {
+        ...roomInclude,
+        reservations: {
+          include: {
+            guest: true
+          }
+        }
+      },
       where: {
         branchId: {
           in: branchId ? [branchId] : branches
@@ -57,10 +64,12 @@ export class RoomService {
       include: {
         branch: true,
         floor: true,
-        reservations: true,
+        reservations: {
+          include: reservationInclude
+        },
         roomResources: true,
         roomType: true
-      },
+      }
     });
     if (!record) throw new BadRequestException(`Room with id ${id} not found`);
     this.permissionsService.verifyEntityOwnership(record.branchId);

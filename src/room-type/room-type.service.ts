@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { DatabaseService } from '@/common/database/database.service';
 import { CreateRoomTypeDto } from './dto/create-room-type.dto';
 import { UpdateRoomTypeDto } from './dto/update-room-type.dto';
@@ -9,6 +9,15 @@ export class RoomTypeService {
   constructor(private readonly database: DatabaseService, private readonly context: ContextService) {}
 
   async create(createRoomTypeDto: CreateRoomTypeDto) {
+   const existing = await this.database.roomType.findFirst({
+      where: {
+        hotelId: this.context.getAuthUser().hotelId,
+        name: createRoomTypeDto.name,
+      }
+    })
+
+    if (existing) throw new BadRequestException("Room type already exists");
+
     return this.database.roomType.create({
       data: createRoomTypeDto,
     });

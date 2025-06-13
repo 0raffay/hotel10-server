@@ -108,6 +108,9 @@ model Room {
 
   roomHistory RoomHistory[]
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   @@unique([roomNumber, branchId])
   @@map("rooms")
 }

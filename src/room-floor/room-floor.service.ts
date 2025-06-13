@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CreateRoomFloorDto } from './dto/create-room-floor.dto';
 import { UpdateRoomFloorDto } from './dto/update-room-floor.dto';
 import { DatabaseService } from '@/common/database/database.service';
@@ -8,6 +8,14 @@ export class RoomFloorService {
   constructor(private database: DatabaseService) {}
 
   async create(createRoomFloorDto: CreateRoomFloorDto) {
+    const existing = await this.database.roomFloor.findFirst({
+      where: {
+        name: createRoomFloorDto.name,
+        branchId: createRoomFloorDto.branchId
+      }
+    });
+
+    if (existing) throw new BadRequestException('Room floor already exists');
     return this.database.roomFloor.create({
       data: createRoomFloorDto
     });

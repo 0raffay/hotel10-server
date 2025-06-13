@@ -1,7 +1,11 @@
 export const reservationInclude = {
   reservationResource: true,
   branch: true,
-  payments: true,
+  payments: {
+    include: {
+      reservation: true
+    }
+  },
   room: {
     include: {
       roomType: true,

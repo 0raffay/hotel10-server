@@ -110,18 +110,7 @@ export class ReservationsService {
             room: true
           }
         },
-        reservationResource: true,
-        branch: true,
-        payments: true,
-        room: {
-          include: {
-            roomType: true,
-            floor: true
-          }
-        },
-        guest: true,
-        createdBy: true,
-        updatedBy: true
+       ...reservationInclude
       }
     });
     if (!record) throw new BadRequestException(`Reservation with id ${id} not found`);
