@@ -3,7 +3,7 @@ import { CreateDamageDto } from './dto/create-damage.dto';
 import { UpdateDamageDto } from './dto/update-damage.dto';
 import { DatabaseService } from '@/common/database/database.service';
 import { ReservationsService } from '@/reservations/reservations.service';
-import { PaymentType } from '@prisma/client';
+import { DamageStatus, PaymentType } from '@prisma/client';
 import { PermissionsService } from '@/permission/permissions.service';
 import { ContextService } from '@/common/context/context.service';
 
@@ -45,11 +45,11 @@ export class DamagesService {
     return await this.database.damage.create({
       data: {
         damagedQuantity: createDamageDto.damagedQuantity,
-        status: 'pending',
+        status: DamageStatus.reported,
         notes: createDamageDto.notes,
         reservationResourceId,
         roomResourceId,
-        reportedBy: this.context.getAuthUser().id
+        reportedBy: createDamageDto.reportedBy || this.context.getAuthUser().id
       }
     });
   }
@@ -57,6 +57,20 @@ export class DamagesService {
   async findAll() {
     const userBranches = this.context.getUserBranches();
     return await this.database.damage.findMany({
+      include:  {
+        reservationResource: {
+          include: {
+            reservation: true,
+            resource: true
+          }
+        },
+        roomResource: {
+          include: {
+            room: true,
+            resource: true
+          }
+        }
+      },
       where: {
         OR: [
           {

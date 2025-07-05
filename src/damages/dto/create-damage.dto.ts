@@ -23,6 +23,9 @@ export class CreateDamageDto {
   @IsEnum(DamageStatus)
   status: DamageStatus;
 
+  @IsNumber()
+  reportedBy?: number;
+
   @IsDefined()
   @ValidateNested()
   @Type(() => ChargeDetails)

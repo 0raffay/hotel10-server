@@ -1,5 +1,5 @@
 import { RoomStatus } from '@prisma/client';
-import { IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsEnum, IsNotEmpty, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
 
 export class CreateRoomDto {
   @IsNumber()
@@ -33,4 +33,11 @@ export class CreateRoomDto {
   @IsEnum(RoomStatus)
   @IsOptional()
   status: RoomStatus;
+
+  @IsArray()
+  @IsOptional()
+  resources?: {
+    resourceId: number;
+    quantity: number;
+  }[]
 }

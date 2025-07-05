@@ -2,7 +2,7 @@ import { DatabaseService } from '@/common/database/database.service';
 import { CreatePaymentDto } from '@/payment/dto/create-payment.dto';
 import { PaymentService } from '@/payment/payment.service';
 import { RoomService } from '@/room/room.service';
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { PaymentType, Reservation } from '@prisma/client';
 
 @Injectable()

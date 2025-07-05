@@ -37,4 +37,9 @@ export class ResourcesController {
   assignResource(@Body() assignResourceDto: AssignResourceDto) {
     return this.resourceService.assignResource(assignResourceDto);
   }
+
+  @Get("/reservation/:id")
+  getReservationResources(@Param('id') id: string) {
+    return this.resourceService.getReservationResources(+id);
+  }
 }

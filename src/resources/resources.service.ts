@@ -8,6 +8,8 @@ import { ReservationsService } from '@/reservations/reservations.service';
 import { RoomService } from '@/room/room.service';
 import { ContextService } from '@/common/context/context.service';
 import { PermissionsService } from '@/permission/permissions.service';
+import { reservationInclude, roomInclude } from '@/common/helpers/prisma.queries';
+import { UpdateAssignResourceDto } from './dto/update-assign-resource.dto';
 
 @Injectable()
 export class ResourcesService {
@@ -50,6 +52,23 @@ export class ResourcesService {
     const record = await this.database.resource.findFirst({
       where: {
         id: id
+      },
+      include: {
+        branch: true,
+        roomResources: {
+          include: {
+            room: {
+              include: roomInclude
+            }
+          }
+        },
+        reservationResources: {
+          include: {
+            reservation: {
+              include: reservationInclude
+            }
+          }
+        }
       }
     });
     if (!record) throw new BadRequestException(`Resource with id ${id} not found`);
@@ -77,7 +96,7 @@ export class ResourcesService {
 
     const resource = await this.findOne(resourceId);
     if (resource.quantity < quantity) {
-      throw new BadRequestException('Not enought resource quantity available');
+      throw new BadRequestException('Not enough resource quantity available');
     }
 
     let assignment: any;
@@ -95,13 +114,13 @@ export class ResourcesService {
 
         await this.reservationService.createReservationPayment({
           type: PaymentType.resource_charges,
-          additionalCharges: chargeDetails.additionalCharges,
+          additionalCharges: chargeDetails?.additionalCharges || 0,
           amount: quantity * (resource.defaultCharge || 0),
-          description: chargeDetails.description,
+          description: chargeDetails?.description || `Resource Charges - ${resource.name}`,
           relatedEntityId: resource.id,
           reservationId: reservation.id,
-          tax: chargeDetails.tax || 0
-        })
+          tax: chargeDetails?.tax || 0
+        });
       }
     }
 
@@ -121,5 +140,47 @@ export class ResourcesService {
     await this.updateResourceQuantity(resource.id, resource.quantity - quantity);
 
     return assignment;
+  }
+
+  async updateReservationResource(id: number, data: UpdateAssignResourceDto) {
+    const reservationResource = await this.database.reservationResource.findFirst({
+      where: {
+        id
+      }
+    });
+  }
+
+  async getReservationResources(reservationId: number) {
+    const reservation = await this.reservationService.findOne(reservationId);
+    if (reservation) {
+      const reservationResources = await this.database.reservationResource.findMany({
+        where: {
+          reservationId
+        },
+        include: {
+          resource: true
+        }
+      });
+
+      const resourceAssignments = await Promise.all(
+        reservationResources.map(async (reservationResource) => {
+          const payment = await this.database.payment.findFirst({
+            where: {
+              reservationId: reservation.id,
+              relatedEntityId: reservationResource.resourceId
+            }
+          });
+
+          return {
+            ...reservationResource,
+            payment
+          };
+        })
+      );
+
+      return resourceAssignments;
+    }
+
+    return false;
   }
 }

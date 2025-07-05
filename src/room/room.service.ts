@@ -20,20 +20,53 @@ export class RoomService {
     if (existingRoom) throw new BadRequestException('Room with this number already exists');
     this.permissionsService.verifyEntityOwnership(createRoomDto.branchId);
 
-    const payload = {
-      ...createRoomDto,
-      status: RoomStatus.available
-    };
-    return await this.database.room.create({ data: payload });
+    const{ resources,...payload} = createRoomDto;
+
+    const room = await this.database.room.create({ data: {...payload, status: RoomStatus.available} });
+
+    if (resources) {
+      await Promise.all(resources.map(async (resource) => {
+        await this.database.roomResource.create({
+          data: {
+            roomId: room.id,
+            resourceId: resource.resourceId,
+            quantity: resource.quantity
+          }
+        });
+      }));
+    }
+
+    return room;
   }
 
   async update(id: number, updateRoomDto: UpdateRoomDto) {
+    const { resources, ...payload } = updateRoomDto;
+
     await this.findOne(id);
+
+    await this.database.roomResource.deleteMany({
+      where: {
+        roomId: id
+      }
+    });
+
+    if (resources) {
+      await Promise.all(resources.map(async (resource) => {
+        await this.database.roomResource.create({
+          data: {
+            roomId: id,
+            resourceId: resource.resourceId,
+            quantity: resource.quantity
+          }
+        });
+      }));
+    }
+
     return await this.database.room.update({
       where: {
         id
       },
-      data: updateRoomDto
+      data: payload
     });
   }
 
@@ -67,7 +100,12 @@ export class RoomService {
         reservations: {
           include: reservationInclude
         },
-        roomResources: true,
+        roomResources: {
+          include: {
+            resource: true,
+            damages: true
+          }
+        },
         roomType: true
       }
     });

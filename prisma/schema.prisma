@@ -231,9 +231,9 @@ model Damage {
 }
 
 enum DamageStatus {
-  pending
+  reported
   under_repair
-  replaced
+  fixed
 }
 
 model Guest {
