@@ -1,4 +1,4 @@
-services:
+services: 
   - type: web
     name: hotel10-server
     env: node
@@ -18,8 +18,16 @@ services:
 
     buildScript:
       command: |
-        echo "▶ Generating Prisma Client..."
+        echo "🚀 Running Prisma Client Generation..."
         npx prisma generate
 
-        echo "▶ Running Prisma Migrations..."
-        npx prisma migrate deploy
+        echo "📦 Pushing schema to the database (Prisma DB Push)..."
+        npx prisma db push --accept-data-loss
+
+        echo "📋 Verifying tables created in public schema..."
+        apt-get update && apt-get install -y postgresql-client
+
+        echo "🔍 Listing public tables from database:"
+        psql "$DATABASE_URL" -c "\dt public.*"
+
+        echo "✅ Done."
