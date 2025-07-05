@@ -2,7 +2,19 @@ services:
   - type: web
     name: hotel10-server
     env: node
-    buildCommand: npm install
+
+    buildCommand: |
+      echo "📦 Installing dependencies..."
+      npm install
+
+      echo "🛠 Generating Prisma Client..."
+      npx prisma generate
+
+      echo "🚀 Pushing Prisma schema to the DB..."
+      npx prisma db push --accept-data-loss
+
+      echo "✅ Prisma DB sync done."
+
     startCommand: npm run start:prod
 
     envVars:
@@ -15,19 +27,3 @@ services:
       paths:
         - "prisma/**"
         - "src/**"
-
-    buildScript:
-      command: |
-        echo "🚀 Running Prisma Client Generation..."
-        npx prisma generate
-
-        echo "📦 Pushing schema to the database (Prisma DB Push)..."
-        npx prisma db push --accept-data-loss
-
-        echo "📋 Verifying tables created in public schema..."
-        apt-get update && apt-get install -y postgresql-client
-
-        echo "🔍 Listing public tables from database:"
-        psql "$DATABASE_URL" -c "\dt public.*"
-
-        echo "✅ Done."
